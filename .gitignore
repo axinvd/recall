@@ -1,0 +1,7 @@
+node_modules/
+__pycache__/
+*.pyc
+.last-sync-ts
+.sync.lock
+chats/
+sync.log

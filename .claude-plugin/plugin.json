@@ -1,0 +1,27 @@
+{
+  "name": "mem",
+  "version": "0.1.0",
+  "description": "Triggered-markdown memory for Claude Code: auto-indexed at session start, Pareto-compacted, one repo as the home of cross-project memory.",
+  "author": {
+    "name": "axinvd"
+  },
+  "commands": "./commands",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/bin/session-start.sh"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/sync_claude_obsidian.sh",
+            "async": true,
+            "statusMessage": "Refreshing chat archive in background"
+          }
+        ]
+      }
+    ]
+  }
+}

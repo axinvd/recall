@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# memory — CLI wrapper. Runs the Python engine with this repo as the root.
+# Works both as a Claude Code plugin (CLAUDE_PLUGIN_ROOT set) and standalone.
+set -euo pipefail
+ROOT="${CLAUDE_PLUGIN_ROOT:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"}"
+exec python3 "$ROOT/src/memory.py" "$@"

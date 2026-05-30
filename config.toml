@@ -1,0 +1,7 @@
+# memory — engine config. Lives in the repo (read relative to the plugin root), so
+# there is nothing to maintain under ~/.config. Vaults are resolved from the environment
+# (global = <repo>/memory, local = $CLAUDE_PROJECT_DIR/docs); only limits live here.
+
+[limits]
+trigger_max    = 200
+body_max_lines = 150

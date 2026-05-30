@@ -1,0 +1,13 @@
+{
+  "name": "memory",
+  "owner": {
+    "name": "axinvd"
+  },
+  "plugins": [
+    {
+      "name": "mem",
+      "source": "./",
+      "description": "Triggered-markdown memory: auto-indexed at session start, Pareto-compacted, one repo as the home of cross-project memory."
+    }
+  ]
+}
