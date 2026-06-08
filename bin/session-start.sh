@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # SessionStart hook. Regenerates the memory index into a file and prints a short
-# pointer to stdout. We do NOT print the index itself: SessionStart output is
-# capped (~10 KB) and would be truncated-to-file at ~20-50 nodes anyway. So we
-# control the file ourselves and tell the agent where to read it on demand.
+# pointer to stdout. We do NOT inline the index/guide into the output: SessionStart
+# output is capped (~10 KB) and would be truncated-to-file at ~20-50 nodes anyway.
+# So we control the files ourselves and direct the agent to Read them up front — the
+# index (all nodes) and the workflow guide — before it starts on the user's request.
 set -uo pipefail
 
 ROOT="${CLAUDE_PLUGIN_ROOT:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"}"
@@ -23,17 +24,31 @@ OUT="/tmp/memory-index-${PROJECT}.md"
   python3 "$ROOT/src/memory.py" index 2>/dev/null
 } > "$OUT" 2>/dev/null
 
-# Compact intro + pointer (well under the hook output cap). This is the only memory
-# guidance injected per session — full conventions live in memory/_workflow.md.
+# Compact intro + mandatory read directive (well under the hook output cap). This is the
+# only memory guidance injected per session — full conventions live in guide/workflow.md
+# (a plugin doc, force-read above; deliberately NOT a vault node, so it stays out of the index).
 cat <<EOF
-[memory] Persistent memory is available as triggered markdown nodes.
-- READ: before grep or re-reading code on a past decision / architecture / known gotcha,
-  read ${OUT} (the refreshed index), match a node's trigger, then Read that node.
-  global = cross-project memory; local = this project's docs/.
-- WRITE (do this yourself, no command): at the end of substantive work, proactively write
-  VERIFIED, durable knowledge into nodes (Pareto — decisions, rationale, trade-offs,
-  gotchas; nothing recoverable from code). No guesses — ideas only on explicit request.
-- /mem:compact is the one manual command — it optimizes the graph.
-- CLI: \`memory status | index | validate\`. Full conventions: memory/_workflow.md.
+[memory] This session uses the \`mem\` plugin — persistent memory as triggered markdown nodes.
+
+FIRST, before starting on the user's request, Read both files in full:
+  1. ${OUT}
+     — the freshly regenerated index: every memory node with its trigger + links.
+  2. ${ROOT}/guide/workflow.md
+     — the guide for reading, writing and curating memory.
+
+Then, as you work:
+- READ relevant nodes (at startup AND mid-session): the moment a question or task touches a
+  past decision / architecture / known gotcha, match a node's trigger from the index and
+  Read that node before grep/re-reading code — a node can become relevant later, not just at
+  startup. global = cross-project memory; local = this project's docs/.
+- WRITE (yourself, no command) — but only AFTER the user confirms the task is done: then
+  proactively capture VERIFIED, durable knowledge into nodes (Pareto — decisions, rationale,
+  trade-offs, gotchas; nothing recoverable from code or obvious from an interface). No
+  guesses — ideas only on explicit request. Offer to commit the changes at that point.
+- RECALL a past session: if the user refers to earlier work and it is NOT in any node, the
+  chat archive is a lightweight grep fallback (processed transcripts, not auto-loaded) —
+  search ~/vault/chats/code/*.md (filter by \`project: <name>\` in frontmatter), then Read
+  the matching transcript.
+- /mem:compact optimizes the graph. CLI: \`memory status | index | validate\`.
 EOF
 exit 0

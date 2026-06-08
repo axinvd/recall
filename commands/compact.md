@@ -1,5 +1,5 @@
 ---
-description: Pareto-compact the memory — downgrade nodes that became derivable from code into link-stubs, merge duplicates, flag stale. Plan → approval → apply. Never deletes without confirmation.
+description: Pareto-compact the memory — tighten verbose nodes, downgrade nodes that became derivable from code into link-stubs, merge/decompose duplicates, flag stale. Plan → approval → apply. Never deletes without confirmation.
 allowed-tools: Bash(memory:*), Bash(git:*), Bash(ls:*), Bash(rg:*), Bash(grep:*), Read, Edit, Write, Agent
 argument-hint: "[global|local] (default: local — the current project's docs/)"
 ---
@@ -7,8 +7,15 @@ argument-hint: "[global|local] (default: local — the current project's docs/)"
 You are running the **Pareto compaction** pass over the memory. Memory should hold
 what is *hard to recover from code* — decisions, rationale, trade-offs, non-obvious
 invariants, rejected approaches. Anything now plainly readable from the implementation
-should shrink to a **link-stub**: a trigger + one or two lines of essence + a pointer to
-the code. The goal is a smaller, denser graph, not deletion for its own sake.
+(including what a clean signature or interface already makes obvious) should shrink to a
+**link-stub**: a trigger + one or two lines of essence + a pointer to the code. The goal is
+a smaller, denser graph, not deletion for its own sake.
+
+Compaction is two jobs, not one. **Triage** decides each node's fate (keep / stub / merge /
+drop). But it also **optimizes the surviving documents themselves**: tighten verbose prose
+to its durable essence, and pull content duplicated across nodes into one canonical node
+that the others link to (decompose, don't copy). A node can be worth keeping yet still be
+bloated or redundant — fix that too.
 
 ## Scope
 
@@ -26,7 +33,11 @@ do it when explicitly asked.
    Each node gets exactly one verdict:
 
    - **KEEP** — contains a decision, rationale, trade-off, non-obvious invariant, gotcha,
-     or rejected approach. Not recoverable by reading the code. Leave untouched.
+     or rejected approach. Not recoverable by reading the code. Already tight. Leave untouched.
+   - **TIGHTEN** — the knowledge is worth keeping, but the body is verbose, restates parts
+     the code now shows, or duplicates content held in another node. Rewrite it down to its
+     durable essence; if the duplication is the problem, fold the shared part into the
+     canonical node and link to it (decompose, don't copy). The node survives — leaner.
    - **STUB** — the body now mostly *describes what the code plainly shows* (how a
      function works, current field names, a flow that's obvious from the source). Rewrite
      it down to: the kept frontmatter `trigger`, the `# H1`, **one–three lines of the
@@ -47,13 +58,15 @@ do it when explicitly asked.
    Do not stub on assumption. Capture the real file path for the stub link.
 
 4. **Present the plan and STOP.** A table: `node | verdict | action | one-line reason`,
-   then totals (`KEEP n / STUB n / MERGE n → x / STALE n`). Show the proposed stub body
-   for each STUB inline so the user sees what survives. **Wait for explicit approval.**
+   then totals (`KEEP n / TIGHTEN n / STUB n / MERGE n → x / STALE n`). Show the proposed
+   rewritten body for each STUB **and** each TIGHTEN inline so the user sees what survives.
+   **Wait for explicit approval.**
    Honor the standing rule: never delete or overwrite a node without confirmation.
 
-5. **Apply approved actions.** Rewrite STUB bodies (Edit), fold+redirect MERGEs, delete
-   approved STALE/merged files. Keep every surviving node's `trigger` accurate to its new
-   (smaller) body — if a stub no longer covers the old trigger, tighten the trigger too.
+5. **Apply approved actions.** Rewrite STUB and TIGHTEN bodies (Edit), fold+redirect MERGEs
+   and decomposed duplicates, delete approved STALE/merged files. Keep every surviving
+   node's `trigger` accurate to its new (smaller) body — if a rewrite no longer covers the
+   old trigger, tighten the trigger too.
 
 6. **Validate.** Run `memory validate <scope>`; fix any dead links the merges/deletes
    introduced (rewrite or remove them). Re-run until clean.

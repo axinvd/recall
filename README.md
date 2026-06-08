@@ -27,8 +27,9 @@ reasoning.
    memory is on every session start — it no longer depends on remembering to run a command.
    (Index goes to a file because the hook's stdout is capped ~10 KB.)
 2. **Memory only grew.** **`/mem:compact`** applies the Pareto principle *retroactively*:
-   nodes that became derivable from the code are downgraded to **link-stubs** (trigger +
-   essence + pointer to code), duplicates merged, stale flagged — with a plan you approve.
+   verbose nodes are tightened, nodes that became derivable from the code are downgraded to
+   **link-stubs** (trigger + essence + pointer to code), duplicates merged or decomposed,
+   stale flagged — with a plan you approve.
 3. **Memory was scattered.** This repo is a **Claude Code plugin** (hook + commands in
    `.claude-plugin/`) and the **home of global memory** (`memory/`). One place.
 
@@ -46,12 +47,14 @@ Vaults resolve from the environment: `global` = `<repo>/memory` (override `MEMOR
 
 ## Commands & cadence
 
-- **Writing is automatic.** The assistant maintains memory proactively — at the end of
-  substantive work it writes verified, durable knowledge into nodes itself (verified-only +
-  Pareto gates from `memory/_workflow.md`). No manual save step.
+- **Writing is automatic, after the task is confirmed done.** The assistant maintains memory
+  proactively — once the user confirms the work is complete it writes verified, durable
+  knowledge into nodes itself (verified-only + Pareto gates from `guide/workflow.md`) and
+  offers to commit. No manual save step; nothing is written mid-task while facts are in flux.
 - **Chat archive is automatic.** The SessionStart hook imports session transcripts.
-- `/mem:compact [local|global]` — the **one manual command**: optimize the graph (downgrade
-  derivable nodes to link-stubs, merge duplicates, flag stale). Plan → approval → apply.
+- `/mem:compact [local|global]` — the **one manual command**: optimize the graph (tighten
+  verbose nodes, downgrade derivable nodes to link-stubs, merge/decompose duplicates, flag
+  stale). Plan → approval → apply.
 
 ## Layout
 
@@ -61,12 +64,13 @@ bin/              memory (CLI wrapper) + session-start.sh (hook)
 src/memory.py     the engine (index/validate/status/dump, multi-vault)
 commands/         slash-command definitions
 scripts/          chat-import pipeline
-memory/           GLOBAL MEMORY — cross-project nodes (incl. _workflow.md)
+guide/workflow.md the memory conventions — force-read by the hook, NOT a vault node
+memory/           GLOBAL MEMORY — cross-project nodes
 templates/        node templates
 docs/             this project's own memory + design rationale
 ```
 
-Start at `memory/_workflow.md` for node conventions, or run `memory status`.
+Start at `guide/workflow.md` for node conventions, or run `memory status`.
 
 ## Install (live, no copy)
 
