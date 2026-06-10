@@ -8,11 +8,16 @@ set -uo pipefail
 
 ROOT="${CLAUDE_PLUGIN_ROOT:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"}"
 
-PROJECT="norepo"
-if [[ -n "${CLAUDE_PROJECT_DIR:-}" ]]; then
-  PROJECT="$(basename "$CLAUDE_PROJECT_DIR")"
+PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
+PROJECT="$(basename "$PROJECT_DIR")"
+# short path hash so same-named projects in different dirs don't share an index file
+HASH="$(printf '%s' "$PROJECT_DIR" | cksum | cut -d' ' -f1)"
+OUT="/tmp/memory-index-${PROJECT}-${HASH}.md"
+
+INDEX_STATUS="ok"
+if ! INDEX="$(python3 "$ROOT/src/memory.py" index 2>&1)"; then
+  INDEX_STATUS="failed"
 fi
-OUT="/tmp/memory-index-${PROJECT}.md"
 
 {
   echo "# Memory index — ${PROJECT} — refreshed at $(date '+%Y-%m-%d %H:%M')"
@@ -21,8 +26,16 @@ OUT="/tmp/memory-index-${PROJECT}.md"
   echo "past decision, architecture, or known gotcha. Match the trigger, then Read"
   echo "the node. global = cross-project memory; local = this project's docs/."
   echo
-  python3 "$ROOT/src/memory.py" index 2>/dev/null
-} > "$OUT" 2>/dev/null
+  echo "$INDEX"
+} > "$OUT"
+
+if [[ "$INDEX_STATUS" == "failed" ]]; then
+  echo "[memory] WARNING: index generation failed — ${OUT} contains the error output."
+  echo "Run \`memory status\` to diagnose. Memory nodes are still on disk:"
+  echo "  global: ${ROOT}/memory/   local: ${PROJECT_DIR}/docs/"
+  echo "Read ${ROOT}/guide/workflow.md for the memory conventions."
+  exit 0
+fi
 
 # Compact intro + mandatory read directive (well under the hook output cap). This is the
 # only memory guidance injected per session — full conventions live in guide/workflow.md
@@ -36,19 +49,16 @@ FIRST, before starting on the user's request, Read both files in full:
   2. ${ROOT}/guide/workflow.md
      — the guide for reading, writing and curating memory.
 
-Then, as you work:
-- READ relevant nodes (at startup AND mid-session): the moment a question or task touches a
-  past decision / architecture / known gotcha, match a node's trigger from the index and
-  Read that node before grep/re-reading code — a node can become relevant later, not just at
-  startup. global = cross-project memory; local = this project's docs/.
-- WRITE (yourself, no command) — but only AFTER the user confirms the task is done: then
-  proactively capture VERIFIED, durable knowledge into nodes (Pareto — decisions, rationale,
-  trade-offs, gotchas; nothing recoverable from code or obvious from an interface). No
-  guesses — ideas only on explicit request. Offer to commit the changes at that point.
-- RECALL a past session: if the user refers to earlier work and it is NOT in any node, the
-  chat archive is a lightweight grep fallback (processed transcripts, not auto-loaded) —
-  search ~/vault/chats/code/*.md (filter by \`project: <name>\` in frontmatter), then Read
-  the matching transcript.
-- /mem:compact optimizes the graph. CLI: \`memory status | index | validate\`.
+Then, as you work (details in the guide):
+- READ: when a question or task touches a past decision / architecture / gotcha, match a
+  node's trigger from the index and Read that node before grep/re-reading code — at
+  startup AND mid-session.
+- WRITE: after the user confirms the task done, capture verified durable knowledge into
+  nodes yourself (Pareto, verified-only); offer to commit.
+- RECALL: past work not in any node — grep the chat archive ~/vault/chats/code/*.md
+  (filter by \`project: <name>\` in frontmatter), then Read the matching transcript.
+- /mem:optimize tunes memory for this session (save + surface unwritten candidates +
+  reconcile touched nodes); /mem:optimize all = vault-wide compaction.
+  CLI: \`memory status | index | validate\`.
 EOF
 exit 0

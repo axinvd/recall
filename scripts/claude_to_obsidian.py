@@ -40,6 +40,11 @@ def project_from_dir(dirname: str) -> str:
     return parts[-1] if parts else "unknown"
 
 
+def is_subagent_jsonl(path: Path) -> bool:
+    """Subagent sessions nest as <parent-uuid>/subagents/agent-<id>.jsonl."""
+    return "subagents" in path.parts
+
+
 def extract_text_from_content(content) -> str:
     """User content is str or list of blocks. Assistant content is list of blocks.
     Returns concatenated text, ignoring tool_use / thinking / tool_result blocks."""
@@ -177,14 +182,24 @@ def render_markdown(session, vault_dir: Path) -> str:
 
 
 def add_wikilinks(content: str, vault_dir: Path) -> str:
+    """Wrap mentions of permanent-note names in [[wikilinks]] — outside fenced code."""
     notes_path = vault_dir / "permanent"
     if not notes_path.exists():
         return content
     existing = {f.stem for f in notes_path.glob("*.md")}
-    for note in existing:
-        pattern = rf"\b{re.escape(note)}\b"
-        content = re.sub(pattern, f"[[{note}]]", content, flags=re.IGNORECASE)
-    return content
+    if not existing:
+        return content
+    out = []
+    in_fence = False
+    for line in content.split("\n"):
+        stripped = line.lstrip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+        elif not in_fence:
+            for note in existing:
+                line = re.sub(rf"\b{re.escape(note)}\b", f"[[{note}]]", line, flags=re.IGNORECASE)
+        out.append(line)
+    return "\n".join(out)
 
 
 def keyword_tags(content: str):
@@ -281,7 +296,8 @@ def find_current_jsonl(projects_dir: Path) -> tuple[Path | None, str]:
             return matches[0], f"detected via {src}"
         return None, f"session id {sid} from {src} but JSONL not on disk"
 
-    candidates = list(projects_dir.rglob("*.jsonl"))
+    # the current interactive session is never a subagent — exclude their JSONLs
+    candidates = [p for p in projects_dir.rglob("*.jsonl") if not is_subagent_jsonl(p)]
     if not candidates:
         return None, "no JSONL files found"
     latest = max(candidates, key=lambda p: p.stat().st_mtime)
@@ -315,6 +331,11 @@ def main():
         "--full",
         action="store_true",
         help="Force full sync of all JSONLs, ignoring the last-sync timestamp. Default is incremental.",
+    )
+    parser.add_argument(
+        "--include-subagents",
+        action="store_true",
+        help="Also import subagent session JSONLs (skipped by default — tool-call noise).",
     )
     args = parser.parse_args()
 
@@ -357,7 +378,12 @@ def main():
         except ValueError:
             last_ts = 0.0
 
-    all_jsonls = list(projects_dir.rglob("*.jsonl"))
+    found = list(projects_dir.rglob("*.jsonl"))
+    if args.include_subagents:
+        all_jsonls, skipped_subagents = found, 0
+    else:
+        all_jsonls = [j for j in found if not is_subagent_jsonl(j)]
+        skipped_subagents = len(found) - len(all_jsonls)
     if args.full or last_ts == 0.0:
         targets = all_jsonls
         mode = "full"
@@ -368,7 +394,7 @@ def main():
     if not targets:
         print(
             f"mode={mode} seen={len(all_jsonls)} written=0 "
-            f"skipped_unchanged={len(all_jsonls)} "
+            f"skipped_unchanged={len(all_jsonls)} skipped_subagents={skipped_subagents} "
             f"last_sync={datetime.fromtimestamp(last_ts).isoformat(timespec='seconds')}"
         )
         LAST_SYNC_FILE.write_text(str(time.time()))
@@ -388,7 +414,7 @@ def main():
 
     print(
         f"mode={mode} seen={len(all_jsonls)} processed={len(targets)} written={written} "
-        f"skipped_unreadable={skipped_unreadable} "
+        f"skipped_unreadable={skipped_unreadable} skipped_subagents={skipped_subagents} "
         f"unchanged={len(all_jsonls) - len(targets)}"
     )
 

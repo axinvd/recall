@@ -16,7 +16,7 @@ Commands:
     memory index [vault]      list nodes (path, trigger, outgoing, incoming)
     memory validate [vault]   frontmatter / H1 / dead-link / size checks
     memory status             where memory lives + node counts (single overview)
-    memory dump [vault]       JSON of every node (trigger/h1/body/links) — feeds /mem:compact
+    memory dump [vault]       JSON of every node (trigger/h1/body/links) — feeds /mem:optimize all
     memory vaults             list resolved vault name -> folder mappings
 """
 
@@ -120,7 +120,6 @@ class Node:
     rel_path: str
     frontmatter: dict[str, str]
     has_frontmatter: bool
-    frontmatter_error: str | None
     h1: str | None
     body: str  # body text (frontmatter stripped), trailing blanks trimmed
     body_line_count: int
@@ -130,7 +129,7 @@ class Node:
     incoming_count: int = 0
 
 
-def parse_frontmatter(yaml_lines: list[str]) -> tuple[dict[str, str], str | None]:
+def parse_frontmatter(yaml_lines: list[str]) -> dict[str, str]:
     """Tiny YAML subset: top-level `key: value` only. Quoted strings supported."""
     out: dict[str, str] = {}
     key_re = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*)\s*:\s*(.*)$")
@@ -149,7 +148,7 @@ def parse_frontmatter(yaml_lines: list[str]) -> tuple[dict[str, str], str | None
         if len(v) >= 2 and v[0] == v[-1] and v[0] in ("'", '"'):
             v = v[1:-1]
         out[k] = v
-    return out, None
+    return out
 
 
 def is_internal_md(href: str) -> bool:
@@ -166,7 +165,6 @@ def parse_node(vault_name: str, vault_root: Path, abs_path: Path) -> Node:
     lines = text.split("\n")
 
     fm: dict[str, str] = {}
-    fm_error: str | None = None
     has_fm = False
     body_start = 0
 
@@ -175,7 +173,7 @@ def parse_node(vault_name: str, vault_root: Path, abs_path: Path) -> Node:
             if lines[i].strip() == "---":
                 has_fm = True
                 body_start = i + 1
-                fm, fm_error = parse_frontmatter(lines[1:i])
+                fm = parse_frontmatter(lines[1:i])
                 break
 
     body_lines = lines[body_start:]
@@ -216,7 +214,6 @@ def parse_node(vault_name: str, vault_root: Path, abs_path: Path) -> Node:
         rel_path=rel,
         frontmatter=fm,
         has_frontmatter=has_fm,
-        frontmatter_error=fm_error,
         h1=h1,
         body=body,
         body_line_count=body_line_count,
@@ -293,8 +290,6 @@ def validate(nodes: list[Node], cfg: Config) -> list[Issue]:
     for n in nodes:
         if not n.has_frontmatter:
             add(n, "error", "missing frontmatter block")
-        elif n.frontmatter_error:
-            add(n, "error", n.frontmatter_error)
         else:
             trig = n.frontmatter.get("trigger")
             if trig is None:
@@ -308,7 +303,7 @@ def validate(nodes: list[Node], cfg: Config) -> list[Issue]:
             add(n, "error", "missing H1 after frontmatter")
 
         if n.body_line_count > cfg.body_max_lines:
-            add(n, "warning", f"body too long ({n.body_line_count} lines; soft limit {cfg.body_max_lines}) — consider splitting or /mem:compact")
+            add(n, "warning", f"body too long ({n.body_line_count} lines; soft limit {cfg.body_max_lines}) — consider splitting or /mem:optimize")
 
         for link in n.unresolved:
             base = link.target.split("/")[-1].split("#", 1)[0]
@@ -426,7 +421,7 @@ def cmd_status(_: list[str]) -> int:
 
 
 def cmd_dump(args: list[str]) -> int:
-    """JSON of every node — input for the /mem:compact Pareto pass."""
+    """JSON of every node — input for the /mem:optimize Pareto pass."""
     cfg = load_config()
     only = args[0] if args else None
     _check_vault(cfg, only)
@@ -459,7 +454,7 @@ USAGE = (
     "  memory index [vault]      list nodes (trigger, outgoing, incoming)\n"
     "  memory validate [vault]   frontmatter / H1 / dead-link / size checks\n"
     "  memory status             where memory lives + node counts\n"
-    "  memory dump [vault]       JSON of all nodes (feeds /mem:compact)\n"
+    "  memory dump [vault]       JSON of all nodes (feeds /mem:optimize all)\n"
     "  memory vaults             list resolved vault -> folder mappings\n"
 )
 
