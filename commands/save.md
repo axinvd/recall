@@ -16,8 +16,7 @@ captures the current session's delta. Siblings: `/mem:compact` (vault-wide maint
    recoverable from code or obvious from an interface):
 
    - **VERIFIED** — decisions + rationale, trade-offs, gotchas hit, rejected approaches;
-     confirmed by running it, reading the code, or stated by the user. This is what
-     autonomous post-task writing would capture anyway.
+     confirmed by running it, reading the code, or stated by the user.
    - **CANDIDATE** — ideas, options weighed but not decided, hypotheses, half-verified
      observations. You would NOT write these on your own; surface them here because the
      user invoked the command explicitly.

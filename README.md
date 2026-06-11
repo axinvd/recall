@@ -49,10 +49,9 @@ Vaults resolve from the environment: `global` = `<repo>/memory` (override `MEMOR
 
 ## Commands & cadence
 
-- **Writing is automatic, after the task is confirmed done.** The assistant maintains memory
-  proactively — once the user confirms the work is complete it writes verified, durable
-  knowledge into nodes itself (verified-only + Pareto gates from `guide/workflow.md`) and
-  offers to commit. Nothing is written mid-task while facts are in flux.
+- **Writing happens only by command.** The assistant never writes nodes on its own — it
+  suggests a save when the session produced durable knowledge, but memory changes only
+  through the three commands below (verified-only + Pareto gates from `guide/workflow.md`).
 - The three manual commands are **named for when you call them**:
   - `/mem:save` — end of a session: writes the session's verified knowledge, surfaces
     borderline candidates (ideas, options discussed, hypotheses) as an interactive

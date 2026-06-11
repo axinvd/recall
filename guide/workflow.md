@@ -86,20 +86,15 @@ moment the work turns to a subsystem, decision, or gotcha a node covers, Read th
 before grep/re-reading code. A node that didn't look relevant at the start often becomes
 relevant mid-task — match its trigger from the index and read it then.
 
-## Writing cadence — write yourself, after the task is confirmed done
+## Writing cadence — only by command
 
-Memory maintains itself: **you write it, no command needed.** But timing matters — **don't
-write nodes until the user has confirmed the task is complete.** Mid-task "facts" are still
-in flux; a decision can be reversed, an approach abandoned, an interface renamed before the
-work lands. Writing too early pollutes the graph with things that turn out false.
+Nodes change **only when the user runs a command** — never write or edit memory on your
+own initiative. If the session produced something durable (a decision, a gotcha, a
+rejected approach), say so and suggest `/mem:save`; the user decides when memory changes.
+What an un-run save leaks, `/mem:import` recovers from the chat archive later. The chat
+archive itself is imported automatically by the SessionStart hook.
 
-So: do the work, let the user confirm it's done, *then* capture the verified, durable
-knowledge — decisions made, rejected approaches, gotchas hit — into the right node (global
-or local `docs/`), applying the two gates above. At that same point, **offer to commit** the
-node changes (and any code), since the task is finished and the working tree is clean to
-review. The chat archive is imported automatically by the SessionStart hook.
-
-**The manual commands — named for when you call them:**
+**The commands — named for when you call them:**
 
 - **`/mem:save`** — end of a session (or a mid-session checkpoint): writes the session's
   verified knowledge, **surfaces the borderline candidates** — ideas, options weighed,
@@ -137,5 +132,7 @@ prints a pointer — read that file before grep when a question touches a past d
 
 ## Never do
 
+- Don't write or edit nodes unprompted — memory changes only via `/mem:save` /
+  `/mem:import` / `/mem:compact`.
 - Don't delete/overwrite a node without asking.
 - Don't append past a node's trigger — split or stub instead.

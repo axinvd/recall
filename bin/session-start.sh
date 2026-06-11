@@ -53,8 +53,8 @@ Then, as you work (details in the guide):
 - READ: when a question or task touches a past decision / architecture / gotcha, match a
   node's trigger from the index and Read that node before grep/re-reading code — at
   startup AND mid-session.
-- WRITE: after the user confirms the task done, capture verified durable knowledge into
-  nodes yourself (Pareto, verified-only); offer to commit.
+- WRITE: only via commands — when the session produced durable knowledge, suggest
+  /mem:save; never write nodes unprompted.
 - RECALL: past work not in any node — grep the chat archive ~/vault/chats/code/*.md
   (filter by \`project: <name>\` in frontmatter), then Read the matching transcript.
 - /mem:save = end-of-session save (verified knowledge + candidate pick-list + reconcile
