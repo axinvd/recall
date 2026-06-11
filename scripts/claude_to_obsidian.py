@@ -35,7 +35,11 @@ KEYWORD_TAG_MAP = {
 
 
 def project_from_dir(dirname: str) -> str:
-    """`-Users-axinvd-projects-demoApp` → `demoApp`."""
+    """`-Users-axinvd-projects-demoApp` → `demoApp`.
+
+    Fallback only: the encoding is lossy (`/` and `_` both become `-`), so
+    `my_app` would decode as `md`. The authoritative source is the `cwd`
+    field on JSONL events — see parse_session."""
     parts = [p for p in dirname.split("-") if p]
     return parts[-1] if parts else "unknown"
 
@@ -105,8 +109,11 @@ def parse_session(jsonl_path: Path):
     assistant_msgs = []
     first_ts = None
     last_ts = None
+    cwd = None
 
     for ev in events:
+        if cwd is None and ev.get("cwd"):
+            cwd = ev["cwd"]
         ts = ev.get("timestamp")
         if ts:
             if first_ts is None:
@@ -121,7 +128,7 @@ def parse_session(jsonl_path: Path):
 
     return {
         "uuid": jsonl_path.stem,
-        "project": project_from_dir(jsonl_path.parent.name),
+        "project": Path(cwd).name if cwd else project_from_dir(jsonl_path.parent.name),
         "first_ts": first_ts,
         "last_ts": last_ts,
         "user_msgs": user_msgs,
