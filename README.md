@@ -94,6 +94,10 @@ This is the method actually in use — wrap it in a shell alias so every session
 The engine then reads/writes the live `~/projects/memory/memory`, not a cache copy.
 `bin/` is also on `PATH`, which is what makes the bare `memory` CLI work.
 
+Live-reload nuance (verified): command markdown is read at invocation time, so edits to
+`commands/*.md` apply immediately even mid-session; the SessionStart hook has already run,
+so hook/index changes only take effect on the next session.
+
 ## Config
 
 `config.toml` (repo root) holds the node-size limits. Nothing lives under `~/.config` —
