@@ -28,7 +28,7 @@ reasoning.
    `/tmp/memory-index-<project>.md` and prints a one-line pointer. The agent is told where
    memory is on every session start — it no longer depends on remembering to run a command.
    (Index goes to a file because the hook's stdout is capped ~10 KB.)
-2. **Memory only grew.** **`/mem:optimize all`** applies the Pareto principle *retroactively*:
+2. **Memory only grew.** **`/mem:compact`** applies the Pareto principle *retroactively*:
    verbose nodes are tightened, nodes that became derivable from the code are downgraded to
    **link-stubs** (trigger + essence + pointer to code), duplicates merged or decomposed,
    stale flagged — with a plan you approve.
@@ -41,7 +41,7 @@ reasoning.
 memory status             where memory lives + node counts (start here)
 memory index [vault]      every node: trigger, outgoing links, incoming count
 memory validate [vault]   frontmatter / H1 / dead-link / size checks
-memory dump [vault]       JSON of all nodes (feeds /mem:optimize all)
+memory dump [vault]       JSON of all nodes (feeds /mem:compact)
 ```
 
 Vaults resolve from the environment: `global` = `<repo>/memory` (override `MEMORY_GLOBAL`),
@@ -53,12 +53,16 @@ Vaults resolve from the environment: `global` = `<repo>/memory` (override `MEMOR
   proactively — once the user confirms the work is complete it writes verified, durable
   knowledge into nodes itself (verified-only + Pareto gates from `guide/workflow.md`) and
   offers to commit. Nothing is written mid-task while facts are in flux.
-- `/mem:optimize` — the **one manual command**: optimize memory in light of this session.
-  Writes the session's verified knowledge, surfaces borderline candidates (ideas, options
-  discussed, hypotheses) as an interactive pick-list, and reconciles the nodes the session
-  touched (tighten / stub / merge / flag stale). Plan → approval → apply.
-- `/mem:optimize all [global]` — the same pass vault-wide: full Pareto compaction of the
-  graph (derivable nodes → link-stubs, duplicates merged/decomposed, stale flagged).
+- The three manual commands are **named for when you call them**:
+  - `/mem:save` — end of a session: writes the session's verified knowledge, surfaces
+    borderline candidates (ideas, options discussed, hypotheses) as an interactive
+    pick-list, and reconciles the nodes the session touched (tighten / stub / merge /
+    flag stale). Plan → approval → apply.
+  - `/mem:compact [global]` — occasional vault maintenance: full Pareto compaction of the
+    graph (derivable nodes → link-stubs, duplicates merged/decomposed, stale flagged).
+  - `/mem:import <project|transcript> [N]` — recovery from the archive: mines a past
+    transcript (or a project's N most recent) for knowledge that never reached nodes —
+    sessions that died mid-task, or projects being onboarded into memory.
 - **Chat archive is automatic.** The SessionStart hook incrementally imports session
   transcripts (subagent sessions are skipped — `--include-subagents` to pull them too).
 
@@ -68,7 +72,7 @@ Vaults resolve from the environment: `global` = `<repo>/memory` (override `MEMOR
 .claude-plugin/   plugin.json (SessionStart hooks) + marketplace.json
 bin/              memory (CLI wrapper) + session-start.sh (hook)
 src/memory.py     the engine (index/validate/status/dump, multi-vault)
-commands/         slash commands: optimize.md
+commands/         slash commands: save.md, compact.md, import.md
 scripts/          chat-import pipeline (claude_to_obsidian.py + sync wrapper)
 guide/workflow.md the memory conventions — force-read by the hook, NOT a vault node
 memory/           GLOBAL MEMORY — cross-project nodes
@@ -99,8 +103,10 @@ the config travels with the repo. Vaults are resolved from the environment, not 
 ## Status
 
 Done: engine, SessionStart hooks (index→file + intro; async chat import), plugin manifest,
-`/mem:optimize` (session-delta save + candidate surfacing; `all` = vault-wide compaction —
-absorbed the former `/mem:save` and `/mem:compact`), chat-import pipeline with subagent
-filtering, global notes moved into `memory/` (`~/vault/permanent` is now a symlink here),
-config in-repo. Loaded live via `--plugin-dir` (`mem@inline`). `/mem:import` was dropped —
-the hook imports automatically; force a resync with `scripts/sync_claude_obsidian.sh --full`.
+the three commands — `/mem:save` (session delta + candidate surfacing), `/mem:compact`
+(vault-wide Pareto pass), `/mem:import` (knowledge from archived chats; the transcript
+*sync* stays automatic — force a resync with `scripts/sync_claude_obsidian.sh --full`) —
+chat-import pipeline with subagent filtering, global notes moved into `memory/`
+(`~/vault/permanent` is now a symlink here), config in-repo. Loaded live via `--plugin-dir`
+(`mem@inline`). A one-day `/mem:optimize` merge of save+compact was reversed — rationale
+in `docs/vault-mem-namespace.md`.

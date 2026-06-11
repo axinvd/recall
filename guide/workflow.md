@@ -99,12 +99,18 @@ or local `docs/`), applying the two gates above. At that same point, **offer to 
 node changes (and any code), since the task is finished and the working tree is clean to
 review. The chat archive is imported automatically by the SessionStart hook.
 
-**`/mem:optimize` — the one manual command.** It optimizes memory in light of the current
-session: writes the session's verified knowledge, **surfaces the borderline candidates** —
-ideas, options weighed, hypotheses you would not have dared write on your own — for the
-user to pick from (picked ones land clearly marked as unverified, never as truth), and
-reconciles the nodes the session touched (tighten / stub / merge / flag stale).
-`/mem:optimize all` runs the same pass vault-wide — that's compaction (below).
+**The manual commands — named for when you call them:**
+
+- **`/mem:save`** — end of a session (or a mid-session checkpoint): writes the session's
+  verified knowledge, **surfaces the borderline candidates** — ideas, options weighed,
+  hypotheses you would not have dared write on your own — for the user to pick from
+  (picked ones land clearly marked as unverified, never as truth), and reconciles the
+  nodes the session touched (tighten / stub / merge / flag stale).
+- **`/mem:compact`** — occasional vault maintenance: the same reconciliation vault-wide
+  (below).
+- **`/mem:import <project|transcript> [N]`** — recovery from the chat archive: the same
+  harvest over past transcripts — sessions that died before their end-of-task write, or
+  onboarding a project whose sessions never fed memory.
 
 ## Node size & compaction
 
@@ -116,7 +122,7 @@ trigger + one or two lines of durable essence + a link to the code.
 Compaction is not only triage (which nodes to stub/merge/drop) — it also **optimizes the
 surviving documents themselves**: tighten verbose prose to its durable essence, pull
 duplicated content out into one canonical node and link to it (decompose, don't copy), and
-trim anything the code now explains. Run `/mem:optimize all` to do this retroactively
+trim anything the code now explains. Run `/mem:compact` to do this retroactively
 across a vault. Prefer stubbing/splitting/decomposing over endless appending.
 
 ## CLI
@@ -124,7 +130,7 @@ across a vault. Prefer stubbing/splitting/decomposing over endless appending.
 - `memory status` — where memory lives + node counts. Single overview.
 - `memory index [vault]` — every node with trigger, outgoing, incoming.
 - `memory validate [vault]` — frontmatter / H1 / dead-link / size checks.
-- `memory dump [vault]` — JSON of all nodes (feeds `/mem:optimize all`).
+- `memory dump [vault]` — JSON of all nodes (feeds `/mem:compact`).
 
 The SessionStart hook regenerates the index into `/tmp/memory-index-<project>.md` and
 prints a pointer — read that file before grep when a question touches a past decision.

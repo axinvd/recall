@@ -57,8 +57,9 @@ Then, as you work (details in the guide):
   nodes yourself (Pareto, verified-only); offer to commit.
 - RECALL: past work not in any node — grep the chat archive ~/vault/chats/code/*.md
   (filter by \`project: <name>\` in frontmatter), then Read the matching transcript.
-- /mem:optimize tunes memory for this session (save + surface unwritten candidates +
-  reconcile touched nodes); /mem:optimize all = vault-wide compaction.
+- /mem:save = end-of-session save (verified knowledge + candidate pick-list + reconcile
+  touched nodes); /mem:compact = vault-wide Pareto compaction; /mem:import
+  <project|transcript> [N] = mine archived chats (interrupted sessions, onboarding).
   CLI: \`memory status | index | validate\`.
 EOF
 exit 0
