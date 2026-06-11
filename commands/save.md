@@ -10,6 +10,9 @@ approaches (the Pareto + verified-only gates from `guide/workflow.md`). This com
 captures the current session's delta. Siblings: `/mem:compact` (vault-wide maintenance),
 `/mem:import` (the same harvest over archived chats).
 
+**Before anything: Read `$CLAUDE_PLUGIN_ROOT/guide/workflow.md`** — the node conventions
+(format, triggers, Pareto, verified-only) this command applies. It is not pre-loaded.
+
 ## Steps
 
 1. **Harvest the session** into two buckets, applying the Pareto gate (skip anything

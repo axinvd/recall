@@ -9,6 +9,9 @@ over every node. Memory should hold what is *hard to recover from code*; this co
 tightens what's bloated and removes what's dead, graph-wide. Siblings: `/mem:save` (this
 session's delta — the cheap, habitual one), `/mem:import` (harvest archived chats).
 
+**Before anything: Read `$CLAUDE_PLUGIN_ROOT/guide/workflow.md`** — the node conventions
+(format, triggers, Pareto, verified-only) this command applies. It is not pre-loaded.
+
 ## Vault
 
 `$ARGUMENTS`: `local` (default) / `global`. `global` is higher-stakes — only compact it

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # SessionStart hook. Regenerates the memory index into a file and prints a short
-# pointer to stdout. We do NOT inline the index/guide into the output: SessionStart
+# pointer to stdout. We do NOT inline the index into the output: SessionStart
 # output is capped (~10 KB) and would be truncated-to-file at ~20-50 nodes anyway.
-# So we control the files ourselves and direct the agent to Read them up front — the
-# index (all nodes) and the workflow guide — before it starts on the user's request.
+# So we control the file ourselves and direct the agent to Read it up front. The
+# write-side guide (guide/workflow.md) is NOT pre-loaded — the /mem: commands load
+# it themselves; the index header carries the read-side instructions.
 set -uo pipefail
 
 ROOT="${CLAUDE_PLUGIN_ROOT:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"}"
@@ -22,9 +23,15 @@ fi
 {
   echo "# Memory index — ${PROJECT} — refreshed at $(date '+%Y-%m-%d %H:%M')"
   echo
-  echo "Consult these nodes before grep/re-reading code when a question touches a"
-  echo "past decision, architecture, or known gotcha. Match the trigger, then Read"
-  echo "the node. global = cross-project memory; local = this project's docs/."
+  echo "This is the persistent memory: curated markdown nodes. global = cross-project"
+  echo "knowledge (lives in the mem plugin repo); local = this project's docs/. Each"
+  echo "entry below is one node: its trigger (the load-or-skip signal), outgoing links"
+  echo "(→) and incoming count (←). Node BODIES are not loaded — only this index is."
+  echo
+  echo "How to use: the moment the conversation touches anything a trigger covers — a"
+  echo "past decision, an architecture, a known gotcha — Read that node file before"
+  echo "grep/re-reading code. That applies all session long, not only at startup:"
+  echo "re-check the triggers when the topic shifts, and follow → links deeper."
   echo
   echo "$INDEX"
 } > "$OUT"
@@ -43,18 +50,16 @@ fi
 cat <<EOF
 [memory] This session uses the \`mem\` plugin — persistent memory as triggered markdown nodes.
 
-FIRST, before starting on the user's request, Read both files in full:
-  1. ${OUT}
-     — the freshly regenerated index: every memory node with its trigger + links.
-  2. ${ROOT}/guide/workflow.md
-     — the guide for reading, writing and curating memory.
+FIRST, before starting on the user's request, Read ${OUT} in full
+— the freshly regenerated memory index; its header explains what it is and how to use it.
 
-Then, as you work (details in the guide):
+Then, as you work:
 - READ: when a question or task touches a past decision / architecture / gotcha, match a
   node's trigger from the index and Read that node before grep/re-reading code — at
   startup AND mid-session.
 - WRITE: only via commands — when the session produced durable knowledge, suggest
-  /mem:save; never write nodes unprompted.
+  /mem:save; never write nodes unprompted. (Node conventions live in
+  ${ROOT}/guide/workflow.md — the commands load it themselves.)
 - RECALL: past work not in any node — grep the chat archive ~/vault/chats/code/*.md
   (filter by \`project: <name>\` in frontmatter), then Read the matching transcript.
 - /mem:save = end-of-session save (verified knowledge + candidate pick-list + reconcile

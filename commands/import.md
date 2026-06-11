@@ -11,6 +11,9 @@ errors, closed laptop), or onboarding a project whose sessions never fed memory.
 transcript *sync* into the archive is automatic (SessionStart hook) — this command extracts
 *knowledge* from the archive into nodes.
 
+**Before anything: Read `$CLAUDE_PLUGIN_ROOT/guide/workflow.md`** — the node conventions
+(format, triggers, Pareto, verified-only) this command applies. It is not pre-loaded.
+
 ## Steps
 
 1. **Resolve the transcripts.** `$ARGUMENTS`: a path is used as-is; a project name resolves

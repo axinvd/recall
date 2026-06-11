@@ -7,8 +7,10 @@ type: reference
 
 # Memory workflow
 
-How the triggered-markdown memory works. This node is itself memory — read it when
-writing/curating nodes or changing the system.
+The write-side conventions of the triggered-markdown memory — loaded by `/mem:save`,
+`/mem:import` and `/mem:compact` before they touch nodes; read it also when changing the
+memory system itself. Read-side rules (trigger matching, recall, the command list) live
+in the SessionStart hook text and the index header — not here.
 
 ## Layout
 
@@ -78,35 +80,6 @@ conclusions. Ideas, hunches, and speculation are written **only on the user's ex
 request**, and then labelled as such (e.g. an `ideas-backlog` node). When unsure whether
 something is verified, don't write it.
 
-## Reading cadence — not just at startup
-
-Read nodes **whenever they become relevant, not only at session start.** The SessionStart
-hook loads the index up front, but the trigger→Read move applies all session long: the
-moment the work turns to a subsystem, decision, or gotcha a node covers, Read that node
-before grep/re-reading code. A node that didn't look relevant at the start often becomes
-relevant mid-task — match its trigger from the index and read it then.
-
-## Writing cadence — only by command
-
-Nodes change **only when the user runs a command** — never write or edit memory on your
-own initiative. If the session produced something durable (a decision, a gotcha, a
-rejected approach), say so and suggest `/mem:save`; the user decides when memory changes.
-What an un-run save leaks, `/mem:import` recovers from the chat archive later. The chat
-archive itself is imported automatically by the SessionStart hook.
-
-**The commands — named for when you call them:**
-
-- **`/mem:save`** — end of a session (or a mid-session checkpoint): writes the session's
-  verified knowledge, **surfaces the borderline candidates** — ideas, options weighed,
-  hypotheses you would not have dared write on your own — for the user to pick from
-  (picked ones land clearly marked as unverified, never as truth), and reconciles the
-  nodes the session touched (tighten / stub / merge / flag stale).
-- **`/mem:compact`** — occasional vault maintenance: the same reconciliation vault-wide
-  (below).
-- **`/mem:import <project|transcript> [N]`** — recovery from the chat archive: the same
-  harvest over past transcripts — sessions that died before their end-of-task write, or
-  onboarding a project whose sessions never fed memory.
-
 ## Node size & compaction
 
 Soft limit ~150 body lines (`memory validate` warns above). A node that outgrows its
@@ -119,16 +92,6 @@ surviving documents themselves**: tighten verbose prose to its durable essence, 
 duplicated content out into one canonical node and link to it (decompose, don't copy), and
 trim anything the code now explains. Run `/mem:compact` to do this retroactively
 across a vault. Prefer stubbing/splitting/decomposing over endless appending.
-
-## CLI
-
-- `memory status` — where memory lives + node counts. Single overview.
-- `memory index [vault]` — every node with trigger, outgoing, incoming.
-- `memory validate [vault]` — frontmatter / H1 / dead-link / size checks.
-- `memory dump [vault]` — JSON of all nodes (feeds `/mem:compact`).
-
-The SessionStart hook regenerates the index into `/tmp/memory-index-<project>.md` and
-prints a pointer — read that file before grep when a question touches a past decision.
 
 ## Never do
 

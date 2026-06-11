@@ -73,7 +73,7 @@ bin/              memory (CLI wrapper) + session-start.sh (hook)
 src/memory.py     the engine (index/validate/status/dump, multi-vault)
 commands/         slash commands: save.md, compact.md, import.md
 scripts/          chat-import pipeline (claude_to_obsidian.py + sync wrapper)
-guide/workflow.md the memory conventions — force-read by the hook, NOT a vault node
+guide/workflow.md the write-side conventions — loaded by the /mem: commands, NOT a vault node
 memory/           GLOBAL MEMORY — cross-project nodes
 docs/             this project's own memory + design rationale
 ```
