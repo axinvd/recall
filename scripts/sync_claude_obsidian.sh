@@ -1,8 +1,9 @@
 #!/bin/bash
 # Chat-import pipeline. Reads ~/.claude/projects/*.jsonl and writes one markdown
-# per session into <vault>/chats/code/. Location-independent: resolves its own dir.
+# per logical session into <repo>/chats/code/. Location-independent: resolves its own dir.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VAULT_DIR="$HOME/vault"          # chats live outside the repo (data, not versioned)
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+VAULT_DIR="$REPO_DIR"            # chats live in the repo under chats/ (gitignored — data, not versioned)
 LOG="$SCRIPT_DIR/sync.log"
 
 # keep the log bounded — it appends on every SessionStart

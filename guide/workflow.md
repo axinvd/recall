@@ -7,10 +7,12 @@ type: reference
 
 # Memory workflow
 
-The write-side conventions of the triggered-markdown memory — loaded by `/mem:save`,
-`/mem:import` and `/mem:compact` before they touch nodes; read it also when changing the
-memory system itself. Read-side rules (trigger matching, recall, the command list) live
-in the SessionStart hook text and the index header — not here.
+The write-side conventions of the triggered-markdown memory. The assistant applies them
+**live** — writing verified nodes itself as a session produces durable knowledge (the
+SessionStart hook carries the trigger to do so); `/mem:import` and `/mem:compact` load this
+file before they touch nodes too. Read it also when changing the memory system itself.
+Read-side rules (trigger matching, recall, the command list) live in the SessionStart hook
+text and the index header — not here.
 
 ## Layout
 
@@ -93,9 +95,17 @@ duplicated content out into one canonical node and link to it (decompose, don't 
 trim anything the code now explains. Run `/mem:compact` to do this retroactively
 across a vault. Prefer stubbing/splitting/decomposing over endless appending.
 
+## When to write (autowrite)
+
+Write verified durable knowledge into nodes **yourself**, at the natural close of the work
+that produced it — don't wait to be asked, and don't batch it all to session end. The bar
+is the Pareto + verified-only gates above: a decision and its *why*, a non-obvious
+invariant, a rejected approach, a gotcha — not anything the code already shows. Prefer
+updating an existing node (match its trigger) over spawning a near-duplicate.
+
 ## Never do
 
-- Don't write or edit nodes unprompted — memory changes only via `/mem:save` /
-  `/mem:import` / `/mem:compact`.
-- Don't delete/overwrite a node without asking.
+- Don't write anything **unverified** on your own — ideas, options weighed, hypotheses.
+  Offer them to the user; they enter memory only if picked, and then labelled as unverified.
+- Don't delete/overwrite a node, or fold/redirect one into another, without asking.
 - Don't append past a node's trigger — split or stub instead.

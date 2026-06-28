@@ -1,15 +1,16 @@
 ---
-description: Mine archived chat transcripts for knowledge that never reached memory — sessions that died mid-task, or projects being onboarded. The /mem:save harvest, with evidence from the archive. Plan → approval → apply.
+description: Mine archived chat transcripts for knowledge that never reached memory — sessions that died mid-task, or projects being onboarded. The live knowledge-harvest, replayed over the archive. Plan → approval → apply.
 allowed-tools: Bash(memory:*), Bash(git:*), Bash(ls:*), Bash(rg:*), Bash(grep:*), Bash(python3:*), Read, Edit, Write, Agent, AskUserQuestion
 argument-hint: "<project>|<transcript.md> [N] (project name → its N most recent transcripts, default 1)"
 ---
 
-You are running the **memory import from archived chats** — the `/mem:save` harvest, but
-the evidence is archived transcript(s) in `~/vault/chats/code/` instead of the live
-conversation. Typical uses: a session that died before its end-of-task write (crash, API
-errors, closed laptop), or onboarding a project whose sessions never fed memory. Note the
-transcript *sync* into the archive is automatic (SessionStart hook) — this command extracts
-*knowledge* from the archive into nodes.
+You are running the **memory import from archived chats** — the same verified-knowledge
+harvest the assistant does live, but the evidence is archived transcript(s) in
+`$CLAUDE_PLUGIN_ROOT/chats/code/` instead of the current conversation. Typical uses: a
+session that died before its knowledge was written (crash, API errors, closed laptop), or
+onboarding a project whose sessions never fed memory. Note the transcript *sync* into the
+archive is automatic (SessionStart hook) — this command extracts *knowledge* from the
+archive into nodes.
 
 **Before anything: Read `$CLAUDE_PLUGIN_ROOT/guide/workflow.md`** — the node conventions
 (format, triggers, Pareto, verified-only) this command applies. It is not pre-loaded.
@@ -17,7 +18,7 @@ transcript *sync* into the archive is automatic (SessionStart hook) — this com
 ## Steps
 
 1. **Resolve the transcripts.** `$ARGUMENTS`: a path is used as-is; a project name resolves
-   to `~/vault/chats/code/*-<project>-*.md` sorted by date, newest N (default 1). List what
+   to `$CLAUDE_PLUGIN_ROOT/chats/code/*-<project>-*.md` sorted by date, newest N (default 1). List what
    you picked before reading. If nothing matches, show the nearest project names from the
    archive and stop.
 

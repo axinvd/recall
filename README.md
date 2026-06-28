@@ -5,17 +5,17 @@ cross-project memory actually lives. Successor to the semi-manual `memgraph` +
 chat-import setup.
 
 The whole point: **one repo you can open to see how memory is wired**, instead of
-spelunking through `~/.claude`, `~/vault`, `~/scripts`, and a global config.
+spelunking through `~/.claude`, `~/scripts`, and a global config.
 
 ## The three layers
 
 | Layer | What | Where | Retrieval |
 |-------|------|-------|-----------|
 | **Triggered nodes** | curated decisions, designs, gotchas | `memory/` (global, in this repo) + `<project>/docs/` (local) | trigger-index, loaded on demand |
-| **Chat archive** | raw session transcripts | `~/vault/chats/` (data, not versioned here) | grep fallback |
+| **Chat archive** | raw session transcripts | `chats/` (in this repo, gitignored — data, not versioned) | grep fallback |
 
-(`~/vault/permanent` is a symlink to this repo's `memory/` — Obsidian sees the global
-nodes; the repo stays the single source.)
+(Both the nodes and the chat archive live in this repo — one place. The archive is
+`.gitignore`d, so it stays out of version control while still travelling with the code.)
 
 No embeddings, no Qdrant, no running service. Flat markdown + a tiny Python CLI. At the
 scale a personal memory vault operates (hundreds of nodes), a trigger-index that's
@@ -33,7 +33,8 @@ reasoning.
    **link-stubs** (trigger + essence + pointer to code), duplicates merged or decomposed,
    stale flagged — with a plan you approve.
 3. **Memory was scattered.** This repo is a **Claude Code plugin** (hook + commands in
-   `.claude-plugin/`) and the **home of global memory** (`memory/`). One place.
+   `.claude-plugin/`), the **home of global memory** (`memory/`), and the **chat archive**
+   (`chats/`, gitignored). One place.
 
 ## CLI
 
@@ -47,23 +48,22 @@ memory dump [vault]       JSON of all nodes (feeds /mem:compact)
 Vaults resolve from the environment: `global` = `<repo>/memory` (override `MEMORY_GLOBAL`),
 `local` = `$CLAUDE_PROJECT_DIR/docs`. No hand-maintained vault registry.
 
-## Commands & cadence
+## Writing & cadence
 
-- **Writing happens only by command.** The assistant never writes nodes on its own — it
-  suggests a save when the session produced durable knowledge, but memory changes only
-  through the three commands below (verified-only + Pareto gates from `guide/workflow.md`).
-- The three manual commands are **named for when you call them**:
-  - `/mem:save` — end of a session: writes the session's verified knowledge, surfaces
-    borderline candidates (ideas, options discussed, hypotheses) as an interactive
-    pick-list, and reconciles the nodes the session touched (tighten / stub / merge /
-    flag stale). Plan → approval → apply.
+- **Autowrite.** The assistant writes verified durable knowledge into nodes *itself*, as a
+  session produces it — no command to run. Two gates bind (from `guide/workflow.md`):
+  only *verified* facts are written, and *unverified* ideas/options/hypotheses are never
+  self-promoted — they're offered to you and land labelled. (Earlier this was a manual
+  `/mem:save`; restored to autowrite 2026-06-28 — history in `docs/vault-mem-namespace.md`.)
+- Two slash commands remain, **named for when you call them**:
   - `/mem:compact [global]` — occasional vault maintenance: full Pareto compaction of the
     graph (derivable nodes → link-stubs, duplicates merged/decomposed, stale flagged).
   - `/mem:import <project|transcript> [N]` — recovery from the archive: mines a past
     transcript (or a project's N most recent) for knowledge that never reached nodes —
     sessions that died mid-task, or projects being onboarded into memory.
 - **Chat archive is automatic.** The SessionStart hook incrementally imports session
-  transcripts (subagent sessions are skipped — `--include-subagents` to pull them too).
+  transcripts into `chats/`, stitching compaction/continuation chains into one file per
+  logical session (subagent sessions are skipped — `--include-subagents` to pull them too).
 
 ## Layout
 
@@ -71,10 +71,11 @@ Vaults resolve from the environment: `global` = `<repo>/memory` (override `MEMOR
 .claude-plugin/   plugin.json (SessionStart hooks) + marketplace.json
 bin/              memory (CLI wrapper) + session-start.sh (hook)
 src/memory.py     the engine (index/validate/status/dump, multi-vault)
-commands/         slash commands: save.md, compact.md, import.md
+commands/         slash commands: compact.md, import.md
 scripts/          chat-import pipeline (claude_to_obsidian.py + sync wrapper)
-guide/workflow.md the write-side conventions — loaded by the /mem: commands, NOT a vault node
+guide/workflow.md the write-side conventions — applied live by the assistant + loaded by the /mem: commands; NOT a vault node
 memory/           GLOBAL MEMORY — cross-project nodes
+chats/            chat archive (gitignored data) — auto-imported session transcripts
 docs/             this project's own memory + design rationale
 ```
 
@@ -106,10 +107,11 @@ the config travels with the repo. Vaults are resolved from the environment, not 
 ## Status
 
 Done: engine, SessionStart hooks (index→file + intro; async chat import), plugin manifest,
-the three commands — `/mem:save` (session delta + candidate surfacing), `/mem:compact`
-(vault-wide Pareto pass), `/mem:import` (knowledge from archived chats; the transcript
-*sync* stays automatic — force a resync with `scripts/sync_claude_obsidian.sh --full`) —
-chat-import pipeline with subagent filtering, global notes moved into `memory/`
-(`~/vault/permanent` is now a symlink here), config in-repo. Loaded live via `--plugin-dir`
-(`mem@inline`). A one-day `/mem:optimize` merge of save+compact was reversed — rationale
-in `docs/vault-mem-namespace.md`.
+**autowrite** (the assistant writes verified nodes itself; `/mem:save` was deleted), the two
+commands — `/mem:compact` (vault-wide Pareto pass) and `/mem:import` (knowledge from archived
+chats; the transcript *sync* stays automatic — force a resync with
+`scripts/sync_claude_obsidian.sh --full`) — chat-import pipeline with subagent filtering and
+**compaction/continuation stitching** (one file per logical session), the chat archive moved
+**into the repo** at `chats/` (gitignored; `~/vault` retired), config in-repo. Loaded live
+via `--plugin-dir` (`mem@inline`). Write-path history (the `/mem:optimize` merge+reversal,
+and autowrite drop+restore) is in `docs/vault-mem-namespace.md`.
