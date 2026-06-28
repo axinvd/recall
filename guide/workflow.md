@@ -79,7 +79,7 @@ nodes alone.
 Memory is ground truth, not a scratchpad. Write **only verified information** — confirmed
 by running it, reading the code, or stated by the user. No guesses, hypotheses, or hasty
 conclusions. Ideas, hunches, and speculation are written **only on the user's explicit
-request**, and then labelled as such (e.g. an `ideas-backlog` node). When unsure whether
+request**, and then labelled as such (e.g. a clearly-marked ideas/backlog node). When unsure whether
 something is verified, don't write it.
 
 ## Node size & compaction

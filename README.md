@@ -1,40 +1,67 @@
 # memory
 
-Persistent, self-maintaining memory for Claude Code — and the single place where
-cross-project memory actually lives. Successor to the semi-manual `memgraph` +
-chat-import setup.
+Persistent, self-maintaining memory for [Claude Code](https://claude.com/claude-code),
+packaged as a plugin. No embeddings, no vector DB, no running service — just flat markdown
+plus a tiny Python CLI, wired so the agent actually *uses* it every session.
 
-The whole point: **one repo you can open to see how memory is wired**, instead of
-spelunking through `~/.claude`, `~/scripts`, and a global config.
+The core idea: curated knowledge lives in small markdown **nodes**, each fronted by a
+**trigger** — a one-line "load-or-skip" signal. A SessionStart hook regenerates a trigger
+index and hands it to the agent on every session, so the right node gets read *before* the
+agent re-greps the code. The agent also **writes** nodes itself as it learns (verified
+facts only), and the whole graph can be **compacted** so memory stops growing without bound.
 
-## The three layers
+## The two layers
 
 | Layer | What | Where | Retrieval |
 |-------|------|-------|-----------|
-| **Triggered nodes** | curated decisions, designs, gotchas | `memory/` (global, in this repo) + `<project>/docs/` (local) | trigger-index, loaded on demand |
-| **Chat archive** | raw session transcripts | `chats/` (in this repo, gitignored — data, not versioned) | grep fallback |
+| **Triggered nodes** | curated decisions, designs, gotchas | `memory/` (global) + `<project>/docs/` (local) | trigger-index, loaded on demand |
+| **Chat archive** | raw session transcripts | `chats/` (gitignored — data, not versioned) | grep fallback |
 
-(Both the nodes and the chat archive live in this repo — one place. The archive is
-`.gitignore`d, so it stays out of version control while still travelling with the code.)
+- **Global** nodes (`memory/`) are cross-project: tooling, methods, patterns useful in any
+  repo. Point `MEMORY_GLOBAL` at any directory to keep them outside this repo.
+- **Local** nodes live in each project's `docs/` and version with that project's code.
+- The **chat archive** is a passive backup of past sessions — searched by grep when a
+  question isn't covered by any node.
 
-No embeddings, no Qdrant, no running service. Flat markdown + a tiny Python CLI. At the
-scale a personal memory vault operates (hundreds of nodes), a trigger-index that's
-*actually loaded every session* beats heavier semantic machinery — see `docs/` for the
-reasoning.
+## How it works
 
-## How it solves the three pains
+**Triggers, not embeddings.** At the scale a personal memory vault operates (hundreds of
+nodes), an index that's *actually loaded every session* beats heavier semantic machinery.
+The index is ~50 tokens/node and lists every node's trigger; the agent matches the prompt
+against triggers and opens just the nodes that fit. Retrieval is **push** (the index is
+always in context) rather than **pull** (query-time vector search) — which fixes the usual
+failure mode where memory exists but the agent never thinks to look for it.
 
-1. **Index wasn't being loaded.** A **SessionStart hook** now regenerates the index into
-   `/tmp/memory-index-<project>.md` and prints a one-line pointer. The agent is told where
-   memory is on every session start — it no longer depends on remembering to run a command.
-   (Index goes to a file because the hook's stdout is capped ~10 KB.)
-2. **Memory only grew.** **`/mem:compact`** applies the Pareto principle *retroactively*:
-   verbose nodes are tightened, nodes that became derivable from the code are downgraded to
-   **link-stubs** (trigger + essence + pointer to code), duplicates merged or decomposed,
-   stale flagged — with a plan you approve.
-3. **Memory was scattered.** This repo is a **Claude Code plugin** (hook + commands in
-   `.claude-plugin/`), the **home of global memory** (`memory/`), and the **chat archive**
-   (`chats/`, gitignored). One place.
+**The agent maintains it.**
+- *Reads* — on a prompt that touches a past decision/architecture/gotcha, the agent reads
+  the matching node before grepping code.
+- *Writes (autowrite)* — when a session produces durable, **verified** knowledge, the agent
+  writes or updates the node itself. Two gates bind: only verified facts are written, and
+  unverified ideas/options are never self-promoted — they're offered to you and land
+  labelled. (See `guide/workflow.md` for the write-side conventions.)
+- *Compacts* — `/mem:compact` applies the Pareto principle retroactively: verbose nodes are
+  tightened, nodes that became derivable from the code are downgraded to **link-stubs**
+  (trigger + essence + pointer to code), duplicates merged, stale flagged — with a plan you
+  approve. This is what keeps memory from only ever growing.
+
+**The chat archive captures everything else.** A SessionStart hook incrementally imports
+Claude Code's session transcripts (`~/.claude/projects/*.jsonl`) into `chats/` as one
+markdown file per *logical* session — stitching compaction/continuation chains (a single
+conversation split across several JSONL files) back into one. Text-only (tool calls and
+thinking stripped), subagent sessions skipped by default. It's the grep-able fallback for
+anything that never made it into a node.
+
+## Commands
+
+Writing verified knowledge is automatic (autowrite). Two slash commands remain, named for
+when you call them:
+
+- `/mem:compact [global|local]` — occasional vault maintenance: the full Pareto pass over
+  the graph (derivable nodes → link-stubs, duplicates merged, stale flagged). Plan → approve
+  → apply.
+- `/mem:import <project|transcript> [N]` — recovery from the archive: mine a past transcript
+  (or a project's N most recent) for knowledge that never reached a node — sessions that
+  died mid-task, or a project being onboarded into memory.
 
 ## CLI
 
@@ -43,27 +70,44 @@ memory status             where memory lives + node counts (start here)
 memory index [vault]      every node: trigger, outgoing links, incoming count
 memory validate [vault]   frontmatter / H1 / dead-link / size checks
 memory dump [vault]       JSON of all nodes (feeds /mem:compact)
+memory vaults             resolved vault name -> folder mappings
 ```
 
-Vaults resolve from the environment: `global` = `<repo>/memory` (override `MEMORY_GLOBAL`),
-`local` = `$CLAUDE_PROJECT_DIR/docs`. No hand-maintained vault registry.
+Vaults resolve from the environment: `global` = `<repo>/memory` (override with
+`MEMORY_GLOBAL`), `local` = `$CLAUDE_PROJECT_DIR/docs`. No hand-maintained registry.
 
-## Writing & cadence
+## Node format
 
-- **Autowrite.** The assistant writes verified durable knowledge into nodes *itself*, as a
-  session produces it — no command to run. Two gates bind (from `guide/workflow.md`):
-  only *verified* facts are written, and *unverified* ideas/options/hypotheses are never
-  self-promoted — they're offered to you and land labelled. (Earlier this was a manual
-  `/mem:save`; restored to autowrite 2026-06-28 — history in `docs/vault-mem-namespace.md`.)
-- Two slash commands remain, **named for when you call them**:
-  - `/mem:compact [global]` — occasional vault maintenance: full Pareto compaction of the
-    graph (derivable nodes → link-stubs, duplicates merged/decomposed, stale flagged).
-  - `/mem:import <project|transcript> [N]` — recovery from the archive: mines a past
-    transcript (or a project's N most recent) for knowledge that never reached nodes —
-    sessions that died mid-task, or projects being onboarded into memory.
-- **Chat archive is automatic.** The SessionStart hook incrementally imports session
-  transcripts into `chats/`, stitching compaction/continuation chains into one file per
-  logical session (subagent sessions are skipped — `--include-subagents` to pull them too).
+```
+---
+trigger: "Use when ... / Read when ... (≤200 chars; pick one prefix)"
+---
+
+# Human-readable H1
+
+Body. Inline links: [label](other-node.md) or [label](~/abs/path.md) cross-vault.
+```
+
+`trigger` is the only required, enforced field. One concept per node, kebab-case filenames,
+aim for ≥2 outgoing links. Full conventions in `guide/workflow.md`. See
+`memory/example-global-node.md` for a starter you can delete.
+
+## Install
+
+Load the plugin live so it reads/writes the repo in place (no cache copy):
+
+```
+claude --plugin-dir /path/to/memory
+```
+
+Wrap it in a shell alias so every session gets it. `bin/` goes on `PATH`, which is what
+makes the bare `memory` CLI work. (Marketplace install instead *copies* the plugin into a
+cache, which freezes the bundled data — fine if your real nodes live elsewhere via
+`MEMORY_GLOBAL`, otherwise prefer the live load.)
+
+Command markdown is read at invocation time, so edits to `commands/*.md` apply immediately,
+even mid-session. The SessionStart hook has already run, so hook/index changes take effect
+next session.
 
 ## Layout
 
@@ -73,45 +117,20 @@ bin/              memory (CLI wrapper) + session-start.sh (hook)
 src/memory.py     the engine (index/validate/status/dump, multi-vault)
 commands/         slash commands: compact.md, import.md
 scripts/          chat-import pipeline (claude_to_obsidian.py + sync wrapper)
-guide/workflow.md the write-side conventions — applied live by the assistant + loaded by the /mem: commands; NOT a vault node
-memory/           GLOBAL MEMORY — cross-project nodes
-chats/            chat archive (gitignored data) — auto-imported session transcripts
-docs/             this project's own memory + design rationale
+guide/workflow.md the write-side conventions (applied live + loaded by the /mem: commands)
+memory/           GLOBAL MEMORY — your cross-project nodes
+chats/            chat archive (gitignored data) — auto-imported transcripts
+config.toml       node-size limits (travels with the repo)
 ```
 
 Start at `guide/workflow.md` for node conventions, or run `memory status`.
 
-## Install (live, no copy)
+## Requirements
 
-Marketplace install **copies** the plugin into `~/.claude/plugins/cache/...`, which freezes
-the bundled `memory/` data and breaks "the repo is the home of memory". Instead, load it
-live (shows up as `mem@inline`) so `${CLAUDE_PLUGIN_ROOT}` points at this repo:
+- [Claude Code](https://claude.com/claude-code)
+- Python 3.11+ (standard library only — no third-party deps)
+- The chat-import hook uses `ps`/`getppid` for session detection (macOS/Linux).
 
-```
-claude --plugin-dir ~/projects/memory
-```
+## License
 
-This is the method actually in use — wrap it in a shell alias so every session gets it.
-The engine then reads/writes the live `~/projects/memory/memory`, not a cache copy.
-`bin/` is also on `PATH`, which is what makes the bare `memory` CLI work.
-
-Live-reload nuance (verified): command markdown is read at invocation time, so edits to
-`commands/*.md` apply immediately even mid-session; the SessionStart hook has already run,
-so hook/index changes only take effect on the next session.
-
-## Config
-
-`config.toml` (repo root) holds the node-size limits. Nothing lives under `~/.config` —
-the config travels with the repo. Vaults are resolved from the environment, not registered.
-
-## Status
-
-Done: engine, SessionStart hooks (index→file + intro; async chat import), plugin manifest,
-**autowrite** (the assistant writes verified nodes itself; `/mem:save` was deleted), the two
-commands — `/mem:compact` (vault-wide Pareto pass) and `/mem:import` (knowledge from archived
-chats; the transcript *sync* stays automatic — force a resync with
-`scripts/sync_claude_obsidian.sh --full`) — chat-import pipeline with subagent filtering and
-**compaction/continuation stitching** (one file per logical session), the chat archive moved
-**into the repo** at `chats/` (gitignored; `~/vault` retired), config in-repo. Loaded live
-via `--plugin-dir` (`mem@inline`). Write-path history (the `/mem:optimize` merge+reversal,
-and autowrite drop+restore) is in `docs/vault-mem-namespace.md`.
+MIT — see [LICENSE](LICENSE).

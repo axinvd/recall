@@ -45,10 +45,10 @@ KEYWORD_TAG_MAP = {
 
 
 def project_from_dir(dirname: str) -> str:
-    """`-Users-axinvd-projects-demoApp` → `demoApp`.
+    """`-Users-me-projects-demoApp` → `demoApp`.
 
     Fallback only: the encoding is lossy (`/` and `_` both become `-`), so
-    `my_app` would decode as `md`. The authoritative source is the `cwd`
+    `my_app` would decode as `app`. The authoritative source is the `cwd`
     field on JSONL events — see parse_session."""
     parts = [p for p in dirname.split("-") if p]
     return parts[-1] if parts else "unknown"
