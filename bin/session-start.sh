@@ -59,11 +59,14 @@ Then, as you work:
   startup AND mid-session.
 - WRITE: when the session produces durable, **verified** knowledge (a decision + its
   rationale, a non-obvious invariant, a rejected approach, a gotcha), write or update the
-  node yourself — at the natural close of that piece of work, not only at session end. Two
-  gates stay hard: write only *verified* facts (confirmed by running it, reading the code,
-  or stated by the user), and never promote *unverified* ideas/options/hypotheses without
-  asking the user first (offer them, land them labelled). Don't delete/overwrite a node, or
-  append past its trigger, without the user's ok. Conventions: ${ROOT}/guide/workflow.md.
+  node yourself — at the natural close of that piece of work, not only at session end —
+  then **commit it immediately** (global nodes in the vault's own repo, e.g.
+  \`git -C ${ROOT}/memory add -A && git -C ${ROOT}/memory commit\`; local nodes in the
+  project repo). Stage only the node file(s), not unrelated changes. Two gates stay hard:
+  write only *verified* facts (confirmed by running it, reading the code, or stated by the
+  user), and never promote *unverified* ideas/options/hypotheses without asking the user
+  first (offer them, land them labelled). Don't delete/overwrite a node, or append past its
+  trigger, without the user's ok. Conventions: ${ROOT}/guide/workflow.md.
 - RECALL: past work not in any node — grep the chat archive ${ROOT}/chats/code/*.md
   (filter by \`project: <name>\` in frontmatter), then Read the matching transcript.
 - /mem:compact = vault-wide Pareto compaction; /mem:import <project|transcript> [N] = mine

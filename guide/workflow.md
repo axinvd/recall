@@ -103,6 +103,21 @@ is the Pareto + verified-only gates above: a decision and its *why*, a non-obvio
 invariant, a rejected approach, a gotcha — not anything the code already shows. Prefer
 updating an existing node (match its trigger) over spawning a near-duplicate.
 
+## Commit after writing
+
+A memory write isn't done until it's committed — nodes are durable knowledge, so version
+them immediately, don't leave them dirty. As soon as you've written or updated node(s):
+
+- **Global** nodes — commit in the global vault's own repo: `git -C <memory-vault> add -A &&
+  git -C <memory-vault> commit`. (In the default layout the vault is `memory/`, a private
+  git repo nested inside the plugin; the plugin repo gitignores it.)
+- **Local** nodes — commit in that project's repo, alongside (or right after) the code change
+  the note describes.
+
+This is the one place the usual "commit only when asked" rule is pre-authorized — but only
+for the memory node(s) themselves: stage just those files, never sweep unrelated changes
+into the commit. Keep the message short (what knowledge changed, not how).
+
 ## Never do
 
 - Don't write anything **unverified** on your own — ideas, options weighed, hypotheses.

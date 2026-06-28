@@ -18,7 +18,9 @@ facts only), and the whole graph can be **compacted** so memory stops growing wi
 | **Chat archive** | raw session transcripts | `chats/` (gitignored — data, not versioned) | grep fallback |
 
 - **Global** nodes (`memory/`) are cross-project: tooling, methods, patterns useful in any
-  repo. Point `MEMORY_GLOBAL` at any directory to keep them outside this repo.
+  repo. `memory/` is **gitignored by this repo** so your knowledge never ships with the
+  plugin — keep it private and versioned by making `memory/` its own **nested git repo**
+  (the plugin just sees a folder), or point `MEMORY_GLOBAL` at a directory elsewhere.
 - **Local** nodes live in each project's `docs/` and version with that project's code.
 - The **chat archive** is a passive backup of past sessions — searched by grep when a
   question isn't covered by any node.
@@ -89,8 +91,8 @@ Body. Inline links: [label](other-node.md) or [label](~/abs/path.md) cross-vault
 ```
 
 `trigger` is the only required, enforced field. One concept per node, kebab-case filenames,
-aim for ≥2 outgoing links. Full conventions in `guide/workflow.md`. See
-`memory/example-global-node.md` for a starter you can delete.
+aim for ≥2 outgoing links. Full conventions in `guide/workflow.md`. Copy
+`templates/example-global-node.md` into your `memory/` vault as a starter.
 
 ## Install
 
@@ -109,6 +111,20 @@ Command markdown is read at invocation time, so edits to `commands/*.md` apply i
 even mid-session. The SessionStart hook has already run, so hook/index changes take effect
 next session.
 
+## Your global vault
+
+`memory/` ships empty (it's gitignored — the plugin never carries anyone's knowledge). On
+first use, make it a private, versioned vault of your own:
+
+```
+mkdir -p memory && cp templates/example-global-node.md memory/
+cd memory && git init          # optional: version your nodes in their own private repo
+```
+
+Because the parent repo ignores `memory/`, a nested git repo there stays fully private —
+push it to a private remote if you want sync/backup. (Or skip git and just keep files; or
+set `MEMORY_GLOBAL` to a vault that lives anywhere.)
+
 ## Layout
 
 ```
@@ -118,7 +134,8 @@ src/memory.py     the engine (index/validate/status/dump, multi-vault)
 commands/         slash commands: compact.md, import.md
 scripts/          chat-import pipeline (claude_to_obsidian.py + sync wrapper)
 guide/workflow.md the write-side conventions (applied live + loaded by the /mem: commands)
-memory/           GLOBAL MEMORY — your cross-project nodes
+templates/        starter node to copy into your vault
+memory/           YOUR global vault (gitignored — keep it as a private nested repo)
 chats/            chat archive (gitignored data) — auto-imported transcripts
 config.toml       node-size limits (travels with the repo)
 ```

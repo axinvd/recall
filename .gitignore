@@ -6,3 +6,6 @@ __pycache__/
 chats/
 sync.log
 .DS_Store
+
+# global memory vault is private (kept as its own nested repo, or just local data)
+/memory/
