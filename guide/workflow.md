@@ -1,19 +1,29 @@
 ---
-trigger: "Read when working on the memory system itself — node conventions, trigger writing, node size, Pareto, compaction"
-title: Memory workflow
+trigger: "Read when working with or on the memory system — using nodes (read/recall), node format, triggers, autowrite, commit-after-write, Pareto/compaction, maintenance commands"
+title: Memory — using & maintaining
 tags: [memory, meta]
 type: reference
 ---
 
-# Memory workflow
+# Memory — using & maintaining
 
-The write-side conventions of the triggered-markdown memory. Because writing is **automatic**
-(the assistant writes verified nodes itself as a session produces durable knowledge), the
-SessionStart hook **injects this file into every session's memory-index file** — so these
-rules are present whenever a write might happen, not only when a command loads them.
-`/mem:import` and `/mem:compact` also load it before they touch nodes. Read-side rules
-(trigger matching, recall, the command list) live in the SessionStart hook text and the
-index header — not here.
+The one guide for this triggered-markdown memory: how to **read** it, **write** it, and keep
+it **healthy**. The SessionStart hook injects this file into every session's index file (the
+index lists the live nodes; this guide says what to do with them) — so the rules are always
+present, which matters because writing is automatic and can happen in any session.
+`/mem:import` and `/mem:compact` load it too. Everything operational lives here; nothing is
+kept only in the hook.
+
+## Using memory (read & recall)
+
+- **Read on match.** The moment a question or task touches something a node's trigger covers
+  — a past decision, an architecture, a known gotcha — Read that node *before* grepping or
+  re-reading code. This holds all session long, not just at startup: re-check triggers as the
+  topic shifts, and follow the `→` links deeper. Node bodies are not in the index; the index
+  is the load-or-skip layer, the node file is the content.
+- **Recall the archive.** For past work not captured in any node, grep the chat archive
+  (`<plugin>/chats/code/*.md`, filtered by `project: <name>` in frontmatter), then Read the
+  matching transcript. The archive is the grep-fallback; curated nodes are primary memory.
 
 ## Layout
 
@@ -80,21 +90,8 @@ nodes alone.
 Memory is ground truth, not a scratchpad. Write **only verified information** — confirmed
 by running it, reading the code, or stated by the user. No guesses, hypotheses, or hasty
 conclusions. Ideas, hunches, and speculation are written **only on the user's explicit
-request**, and then labelled as such (e.g. a clearly-marked ideas/backlog node). When unsure whether
-something is verified, don't write it.
-
-## Node size & compaction
-
-Soft limit ~150 body lines (`memory validate` warns above). A node that outgrows its
-trigger is a split candidate. But the deeper move is **compaction**: once something is
-*implemented and plainly readable from the code*, downgrade the node to a **link-stub** —
-trigger + one or two lines of durable essence + a link to the code.
-
-Compaction is not only triage (which nodes to stub/merge/drop) — it also **optimizes the
-surviving documents themselves**: tighten verbose prose to its durable essence, pull
-duplicated content out into one canonical node and link to it (decompose, don't copy), and
-trim anything the code now explains. Run `/mem:compact` to do this retroactively
-across a vault. Prefer stubbing/splitting/decomposing over endless appending.
+request**, and then labelled as such (e.g. a clearly-marked ideas/backlog node). When unsure
+whether something is verified, don't write it.
 
 ## When to write (autowrite)
 
@@ -118,6 +115,27 @@ them immediately, don't leave them dirty. As soon as you've written or updated n
 This is the one place the usual "commit only when asked" rule is pre-authorized — but only
 for the memory node(s) themselves: stage just those files, never sweep unrelated changes
 into the commit. Keep the message short (what knowledge changed, not how).
+
+## Node size & compaction
+
+Soft limit ~150 body lines (`memory validate` warns above). A node that outgrows its
+trigger is a split candidate. But the deeper move is **compaction**: once something is
+*implemented and plainly readable from the code*, downgrade the node to a **link-stub** —
+trigger + one or two lines of durable essence + a link to the code.
+
+Compaction is not only triage (which nodes to stub/merge/drop) — it also **optimizes the
+surviving documents themselves**: tighten verbose prose to its durable essence, pull
+duplicated content out into one canonical node and link to it (decompose, don't copy), and
+trim anything the code now explains. Prefer stubbing/splitting/decomposing over endless
+appending.
+
+## Maintenance commands
+
+- `/mem:compact [global|local]` — vault-wide Pareto pass: re-verify every node against the
+  code, then tighten / stub / merge / flag stale. Plan → approval → apply.
+- `/mem:import <project|transcript> [N]` — mine archived chat transcripts for knowledge that
+  never reached a node (sessions that died mid-task, or a project being onboarded).
+- CLI: `memory status | index | validate | dump` (start with `status`).
 
 ## Never do
 
