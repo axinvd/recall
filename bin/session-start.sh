@@ -33,14 +33,14 @@ fi
 } > "$OUT"
 
 if [[ "$INDEX_STATUS" == "failed" ]]; then
-  echo "[memory] WARNING: index generation failed — ${OUT} has the error output."
+  echo "[recall] WARNING: index generation failed — ${OUT} has the error output."
   echo "Run \`memory status\` to diagnose. Nodes on disk: global ${ROOT}/memory/, local ${PROJECT_DIR}/docs/."
   echo "The memory guide is at ${ROOT}/guide/workflow.md."
   exit 0
 fi
 
 cat <<EOF
-[memory] \`mem\` plugin — persistent triggered-markdown memory. The guide below is your
+[recall] \`recall\` plugin — persistent triggered-markdown memory. The guide below is your
 standing instruction for using, writing, committing, and maintaining memory this session
 (writing is automatic — you do it yourself). The live node index for this project is in
 ${OUT} — Read it for the triggers, then open a node the moment one matches. Re-apply all of

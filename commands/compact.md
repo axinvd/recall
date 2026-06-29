@@ -8,7 +8,7 @@ You are running the **vault-wide memory compaction** — the full retroactive Pa
 over every node. Memory should hold what is *hard to recover from code*; this command
 tightens what's bloated and removes what's dead, graph-wide. Where the assistant's live
 autowrite keeps individual nodes current, this is the occasional whole-graph pass. Sibling:
-`/mem:import` (harvest knowledge from archived chats).
+`/recall:import` (harvest knowledge from archived chats).
 
 **Before anything: Read `$CLAUDE_PLUGIN_ROOT/guide/workflow.md`** — the node conventions
 (format, triggers, Pareto, verified-only) this command applies. It is not pre-loaded.

@@ -16,7 +16,7 @@ Commands:
     memory index [vault]      list nodes (path, trigger, outgoing, incoming)
     memory validate [vault]   frontmatter / H1 / dead-link / size checks
     memory status             where memory lives + node counts (single overview)
-    memory dump [vault]       JSON of every node (trigger/h1/body/links) — feeds /mem:compact
+    memory dump [vault]       JSON of every node (trigger/h1/body/links) — feeds /recall:compact
     memory vaults             list resolved vault name -> folder mappings
 """
 
@@ -303,7 +303,7 @@ def validate(nodes: list[Node], cfg: Config) -> list[Issue]:
             add(n, "error", "missing H1 after frontmatter")
 
         if n.body_line_count > cfg.body_max_lines:
-            add(n, "warning", f"body too long ({n.body_line_count} lines; soft limit {cfg.body_max_lines}) — consider splitting or /mem:compact")
+            add(n, "warning", f"body too long ({n.body_line_count} lines; soft limit {cfg.body_max_lines}) — consider splitting or /recall:compact")
 
         for link in n.unresolved:
             base = link.target.split("/")[-1].split("#", 1)[0]
@@ -421,7 +421,7 @@ def cmd_status(_: list[str]) -> int:
 
 
 def cmd_dump(args: list[str]) -> int:
-    """JSON of every node — input for the /mem:compact Pareto pass."""
+    """JSON of every node — input for the /recall:compact Pareto pass."""
     cfg = load_config()
     only = args[0] if args else None
     _check_vault(cfg, only)
@@ -454,7 +454,7 @@ USAGE = (
     "  memory index [vault]      list nodes (trigger, outgoing, incoming)\n"
     "  memory validate [vault]   frontmatter / H1 / dead-link / size checks\n"
     "  memory status             where memory lives + node counts\n"
-    "  memory dump [vault]       JSON of all nodes (feeds /mem:compact)\n"
+    "  memory dump [vault]       JSON of all nodes (feeds /recall:compact)\n"
     "  memory vaults             list resolved vault -> folder mappings\n"
 )
 

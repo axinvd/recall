@@ -1,8 +1,9 @@
-# memory
+# recall
 
-Persistent, self-maintaining memory for [Claude Code](https://claude.com/claude-code),
-packaged as a plugin. No embeddings, no vector DB, no running service — just flat markdown
-plus a tiny Python CLI, wired so the agent actually *uses* it every session.
+**recall** — persistent, self-maintaining memory for [Claude Code](https://claude.com/claude-code),
+packaged as a plugin (its commands live under `/recall:`). No embeddings, no vector DB, no
+running service — just flat markdown plus a tiny Python CLI, wired so the agent actually
+*uses* it every session.
 
 The core idea: curated knowledge lives in small markdown **nodes**, each fronted by a
 **trigger** — a one-line "load-or-skip" signal. A SessionStart hook regenerates a trigger
@@ -53,7 +54,7 @@ anything that never made it into a node.
 
 Writing is automatic (autowrite) — no command for it. Two slash commands remain for
 maintenance, both documented under **[Maintenance commands](guide/workflow.md#maintenance-commands)**
-in the guide: `/mem:compact` (vault-wide Pareto pass) and `/mem:import` (mine archived chats
+in the guide: `/recall:compact` (vault-wide Pareto pass) and `/recall:import` (mine archived chats
 for knowledge that never reached a node — interrupted sessions, onboarding).
 
 ## CLI
@@ -62,7 +63,7 @@ for knowledge that never reached a node — interrupted sessions, onboarding).
 memory status             where memory lives + node counts (start here)
 memory index [vault]      every node: trigger, outgoing links, incoming count
 memory validate [vault]   frontmatter / H1 / dead-link / size checks
-memory dump [vault]       JSON of all nodes (feeds /mem:compact)
+memory dump [vault]       JSON of all nodes (feeds /recall:compact)
 memory vaults             resolved vault name -> folder mappings
 ```
 
@@ -78,20 +79,32 @@ into your `memory/` vault as a working starter.
 
 ## Install
 
-Load the plugin live so it reads/writes the repo in place (no cache copy):
+Two ways — both reference this repo by path.
+
+**Live load** — point Claude Code at a local clone so it reads/writes the repo in place (no
+cache copy):
 
 ```
-claude --plugin-dir /path/to/memory
+claude --plugin-dir /path/to/recall
 ```
 
-Wrap it in a shell alias so every session gets it. `bin/` goes on `PATH`, which is what
-makes the bare `memory` CLI work. (Marketplace install instead *copies* the plugin into a
-cache, which freezes the bundled data — fine if your real nodes live elsewhere via
-`MEMORY_GLOBAL`, otherwise prefer the live load.)
-
+Best for hacking on the plugin or running your own copy. Wrap it in a shell alias so every
+session gets it. `bin/` goes on `PATH`, which is what makes the bare `memory` CLI work.
 Command markdown is read at invocation time, so edits to `commands/*.md` apply immediately,
-even mid-session. The SessionStart hook has already run, so hook/index changes take effect
+even mid-session; the SessionStart hook has already run, so hook/index changes take effect
 next session.
+
+**Marketplace** — add the catalog repo, then install the plugin from it:
+
+```
+/plugin marketplace add axinvd/recall
+/plugin install recall@axinvd
+```
+
+`axinvd/recall` is the GitHub repo that holds the marketplace; `recall@axinvd` reads as "the
+`recall` plugin from the `axinvd` catalog". Marketplace install *copies* the plugin into a
+cache, which freezes the bundled folders — fine here, because your real global nodes live
+outside the plugin (a nested private repo in `memory/`, or `MEMORY_GLOBAL`).
 
 ## Your global vault
 

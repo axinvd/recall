@@ -35,7 +35,7 @@ archive into nodes.
 
 3. **Collect and reconcile touched nodes** of the *target project's* vault plus global:
    nodes whose triggers match what the transcript worked on. Verdicts KEEP / TIGHTEN /
-   STUB / MERGE / STALE (full definitions in `/mem:compact`'s doc).
+   STUB / MERGE / STALE (full definitions in `/recall:compact`'s doc).
 
 4. **Route the knowledge.** Project-scoped findings go to that project's `docs/` — not the
    current repo's. If the target project has no `docs/` vault yet, creating it is an

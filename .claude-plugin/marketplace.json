@@ -1,13 +1,13 @@
 {
-  "name": "memory",
+  "name": "axinvd",
   "owner": {
     "name": "axinvd"
   },
   "plugins": [
     {
-      "name": "mem",
+      "name": "recall",
       "source": "./",
-      "description": "Triggered-markdown memory: auto-indexed at session start, Pareto-compacted, one repo as the home of cross-project memory."
+      "description": "Triggered-markdown memory for Claude Code: auto-indexed every session, written automatically by the agent, Pareto-compacted."
     }
   ]
 }

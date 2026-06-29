@@ -2,7 +2,7 @@
 
 The one guide for this triggered-markdown memory: how to read it, write it, and keep it
 healthy. The SessionStart hook puts this in front of you every session (writing is automatic
-and can happen in any session); `/mem:import` and `/mem:compact` load it too. Everything
+and can happen in any session); `/recall:import` and `/recall:compact` load it too. Everything
 operational lives here.
 
 ## Using memory (read & recall)
@@ -99,9 +99,9 @@ anything the code now explains. Prefer stubbing/splitting/decomposing over endle
 
 ## Maintenance commands
 
-- `/mem:compact [global|local]` — vault-wide Pareto pass: re-verify each node against the
+- `/recall:compact [global|local]` — vault-wide Pareto pass: re-verify each node against the
   code, then tighten / stub / merge / flag stale. Plan → approval → apply.
-- `/mem:import <project|transcript> [N]` — mine archived chats for knowledge that never
+- `/recall:import <project|transcript> [N]` — mine archived chats for knowledge that never
   reached a node (sessions that died mid-task, or a project being onboarded).
 - CLI: `memory status | index | validate | dump`.
 
