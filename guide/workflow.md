@@ -7,12 +7,13 @@ type: reference
 
 # Memory workflow
 
-The write-side conventions of the triggered-markdown memory. The assistant applies them
-**live** — writing verified nodes itself as a session produces durable knowledge (the
-SessionStart hook carries the trigger to do so); `/mem:import` and `/mem:compact` load this
-file before they touch nodes too. Read it also when changing the memory system itself.
-Read-side rules (trigger matching, recall, the command list) live in the SessionStart hook
-text and the index header — not here.
+The write-side conventions of the triggered-markdown memory. Because writing is **automatic**
+(the assistant writes verified nodes itself as a session produces durable knowledge), the
+SessionStart hook **injects this file into every session's memory-index file** — so these
+rules are present whenever a write might happen, not only when a command loads them.
+`/mem:import` and `/mem:compact` also load it before they touch nodes. Read-side rules
+(trigger matching, recall, the command list) live in the SessionStart hook text and the
+index header — not here.
 
 ## Layout
 
