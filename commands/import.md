@@ -5,21 +5,24 @@ argument-hint: "<project>|<transcript.md> [N] (project name → its N most recen
 ---
 
 You are running the **memory import from archived chats** — the same verified-knowledge
-harvest the assistant does live, but the evidence is archived transcript(s) in
-`$CLAUDE_PLUGIN_ROOT/chats/code/` instead of the current conversation. Typical uses: a
+harvest the assistant does live, but the evidence is archived transcript(s) in the chat
+archive instead of the current conversation. Typical uses: a
 session that died before its knowledge was written (crash, API errors, closed laptop), or
 onboarding a project whose sessions never fed memory. Note the transcript *sync* into the
 archive is automatic (SessionStart hook) — this command extracts *knowledge* from the
 archive into nodes.
 
-**Before anything: Read `$CLAUDE_PLUGIN_ROOT/guide/workflow.md`** — the node conventions
-(format, triggers, Pareto, verified-only) this command applies. It is not pre-loaded.
+**Before anything: re-read the memory guide** — the SessionStart hook already prints it
+inline in your context (the `[recall]` block = `guide/workflow.md`). It carries the node
+conventions (format, triggers, Pareto, verified-only) this command applies.
 
 ## Steps
 
-1. **Resolve the transcripts.** `$ARGUMENTS`: a path is used as-is; a project name resolves
-   to `$CLAUDE_PLUGIN_ROOT/chats/code/*-<project>-*.md` sorted by date, newest N (default 1). List what
-   you picked before reading. If nothing matches, show the nearest project names from the
+1. **Resolve the transcripts.** The chat-archive absolute path is in the SessionStart
+   memory-index header (the `Chat archive (grep fallback): …` line) — Read that index file
+   for it. `$ARGUMENTS`: a path is used as-is; a project name resolves to
+   `<chat-archive>/*-<project>-*.md` sorted by date, newest N (default 1). List what you
+   picked before reading. If nothing matches, show the nearest project names from the
    archive and stop.
 
 2. **Read each transcript and harvest** into VERIFIED / CANDIDATE buckets (the Pareto +

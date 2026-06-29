@@ -10,8 +10,9 @@ tightens what's bloated and removes what's dead, graph-wide. Where the assistant
 autowrite keeps individual nodes current, this is the occasional whole-graph pass. Sibling:
 `/recall:import` (harvest knowledge from archived chats).
 
-**Before anything: Read `$CLAUDE_PLUGIN_ROOT/guide/workflow.md`** — the node conventions
-(format, triggers, Pareto, verified-only) this command applies. It is not pre-loaded.
+**Before anything: re-read the memory guide** — the SessionStart hook already prints it
+inline in your context (the `[recall]` block = `guide/workflow.md`). It carries the node
+conventions (format, triggers, Pareto, verified-only) this command applies.
 
 ## Vault
 
