@@ -34,17 +34,13 @@ against triggers and opens just the nodes that fit. Retrieval is **push** (the i
 always in context) rather than **pull** (query-time vector search) — which fixes the usual
 failure mode where memory exists but the agent never thinks to look for it.
 
-**The agent maintains it.**
-- *Reads* — on a prompt that touches a past decision/architecture/gotcha, the agent reads
-  the matching node before grepping code.
-- *Writes (autowrite)* — when a session produces durable, **verified** knowledge, the agent
-  writes or updates the node itself. Two gates bind: only verified facts are written, and
-  unverified ideas/options are never self-promoted — they're offered to you and land
-  labelled. (See `guide/workflow.md` for the write-side conventions.)
-- *Compacts* — `/mem:compact` applies the Pareto principle retroactively: verbose nodes are
-  tightened, nodes that became derivable from the code are downgraded to **link-stubs**
-  (trigger + essence + pointer to code), duplicates merged, stale flagged — with a plan you
-  approve. This is what keeps memory from only ever growing.
+**The agent maintains it.** It reads the matching node before grepping, writes verified nodes
+itself as it learns (autowrite — unverified ideas are never self-promoted), commits each one,
+and periodically compacts the graph so it stops growing. All the operational rules for this
+live in one place — **[`guide/workflow.md`](guide/workflow.md)** (reading & recall, node
+format, the verified-only / Pareto gates, autowrite, commit-after-write, compaction) — which
+the SessionStart hook puts in front of the agent every session, so it's followed, not just
+documented.
 
 **The chat archive captures everything else.** A SessionStart hook incrementally imports
 Claude Code's session transcripts (`~/.claude/projects/*.jsonl`) into `chats/` as one
@@ -55,15 +51,10 @@ anything that never made it into a node.
 
 ## Commands
 
-Writing verified knowledge is automatic (autowrite). Two slash commands remain, named for
-when you call them:
-
-- `/mem:compact [global|local]` — occasional vault maintenance: the full Pareto pass over
-  the graph (derivable nodes → link-stubs, duplicates merged, stale flagged). Plan → approve
-  → apply.
-- `/mem:import <project|transcript> [N]` — recovery from the archive: mine a past transcript
-  (or a project's N most recent) for knowledge that never reached a node — sessions that
-  died mid-task, or a project being onboarded into memory.
+Writing is automatic (autowrite) — no command for it. Two slash commands remain for
+maintenance, both documented under **[Maintenance commands](guide/workflow.md#maintenance-commands)**
+in the guide: `/mem:compact` (vault-wide Pareto pass) and `/mem:import` (mine archived chats
+for knowledge that never reached a node — interrupted sessions, onboarding).
 
 ## CLI
 
@@ -80,19 +71,10 @@ Vaults resolve from the environment: `global` = `<repo>/memory` (override with
 
 ## Node format
 
-```
----
-trigger: "Use when ... / Read when ... (≤200 chars; pick one prefix)"
----
-
-# Human-readable H1
-
-Body. Inline links: [label](other-node.md) or [label](~/abs/path.md) cross-vault.
-```
-
-`trigger` is the only required, enforced field. One concept per node, kebab-case filenames,
-aim for ≥2 outgoing links. Full conventions in `guide/workflow.md`. Copy
-`templates/example-global-node.md` into your `memory/` vault as a starter.
+A node is markdown with a one-line `trigger` in YAML front matter and an `# H1` heading; the
+`trigger` is the only required field. The full rules — trigger writing, links, size limits —
+are in **[the guide](guide/workflow.md#node-format)**. Copy `templates/example-global-node.md`
+into your `memory/` vault as a working starter.
 
 ## Install
 
@@ -133,7 +115,7 @@ bin/              memory (CLI wrapper) + session-start.sh (hook)
 src/memory.py     the engine (index/validate/status/dump, multi-vault)
 commands/         slash commands: compact.md, import.md
 scripts/          chat-import pipeline (claude_to_obsidian.py + sync wrapper)
-guide/workflow.md the write-side conventions (applied live + loaded by the /mem: commands)
+guide/workflow.md the operational guide (read/write/commit/maintain) — injected every session
 templates/        starter node to copy into your vault
 memory/           YOUR global vault (gitignored — keep it as a private nested repo)
 chats/            chat archive (gitignored data) — auto-imported transcripts

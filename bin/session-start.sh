@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# SessionStart hook. Builds one file the agent must Read, then prints a short pointer to it.
-# The file = the regenerated node index + the full memory guide (guide/workflow.md, appended
-# with its frontmatter stripped). All behavioural rules — read, recall, write, commit,
-# maintain — live in the guide; the hook only generates the index, wires in the live paths,
-# and tells the agent to read the file. (We write to a file, not stdout: SessionStart output
-# is capped ~10 KB. The guide is the single source of truth — the hook never restates it.)
+# SessionStart hook. Two parts, by size:
+#   - the node index (variable, can be large) is written to a FILE — kept out of the capped
+#     hook output so a big vault never overflows it and gets ignored; the agent Reads it when
+#     it needs a trigger.
+#   - the memory guide (guide/workflow.md, fixed ~6 KB) is printed INLINE — it's the standing
+#     instruction for how to use/write/commit/maintain memory, so it's in front of the agent
+#     every session with no Read. The guide is the single source of truth for behaviour; the
+#     hook generates the index, wires in live paths, and never restates the guide.
 set -uo pipefail
 
 ROOT="${CLAUDE_PLUGIN_ROOT:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"}"
-
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
 PROJECT="$(basename "$PROJECT_DIR")"
 # short path hash so same-named projects in different dirs don't share an index file
@@ -21,35 +22,30 @@ if ! INDEX="$(python3 "$ROOT/src/memory.py" index 2>&1)"; then
 fi
 
 {
-  echo "# Memory — ${PROJECT} — refreshed at $(date '+%Y-%m-%d %H:%M')"
+  echo "# Memory index — ${PROJECT} — refreshed at $(date '+%Y-%m-%d %H:%M')"
   echo
-  echo "The live index of memory nodes is below; after it, the guide for using and"
-  echo "maintaining memory — read both. Vaults: global = ${ROOT}/memory, local ="
-  echo "${PROJECT_DIR}/docs. Chat archive (grep fallback): ${ROOT}/chats/code. Each index"
-  echo "line shows a node's trigger (the load-or-skip signal), → outgoing links and ←"
-  echo "incoming count; node bodies are not loaded — Read the node file when a trigger matches."
+  echo "The live node index. Each line is one node: its trigger (the load-or-skip signal),"
+  echo "→ outgoing links and ← incoming count. Bodies are NOT here — Read a node file the"
+  echo "moment its trigger matches the conversation. Vaults: global = ${ROOT}/memory, local ="
+  echo "${PROJECT_DIR}/docs. Chat archive (grep fallback): ${ROOT}/chats/code."
   echo
   echo "$INDEX"
-  echo
-  echo "---"
-  echo
-  # Append the guide minus its YAML frontmatter (keep the body from its first H1 on).
-  awk 'NR==1 && /^---/ {f=1; next} f && /^---/ {f=0; next} !f' "$ROOT/guide/workflow.md"
 } > "$OUT"
 
 if [[ "$INDEX_STATUS" == "failed" ]]; then
-  echo "[memory] WARNING: index generation failed — ${OUT} contains the error output."
-  echo "Run \`memory status\` to diagnose. Memory nodes are still on disk:"
-  echo "  global: ${ROOT}/memory/   local: ${PROJECT_DIR}/docs/"
-  echo "Read ${ROOT}/guide/workflow.md for the memory conventions."
+  echo "[memory] WARNING: index generation failed — ${OUT} has the error output."
+  echo "Run \`memory status\` to diagnose. Nodes on disk: global ${ROOT}/memory/, local ${PROJECT_DIR}/docs/."
+  echo "The memory guide is at ${ROOT}/guide/workflow.md."
   exit 0
 fi
 
 cat <<EOF
-[memory] This session uses the \`mem\` plugin — persistent memory as triggered markdown nodes.
+[memory] \`mem\` plugin — persistent triggered-markdown memory. The guide below is your
+standing instruction for using, writing, committing, and maintaining memory this session
+(writing is automatic — you do it yourself). The live node index for this project is in
+${OUT} — Read it for the triggers, then open a node the moment one matches. Re-apply all of
+this as the topic shifts, not just at startup.
 
-Before starting the user's request, Read ${OUT} in full: the live node index plus the guide
-for using, writing, committing, and maintaining memory. Re-check it as the topic shifts —
-this is your standing instruction for how memory works, not a one-time startup note.
 EOF
+cat "$ROOT/guide/workflow.md"
 exit 0
